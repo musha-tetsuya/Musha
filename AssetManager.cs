@@ -60,12 +60,13 @@ namespace Musha
 #endif
 		{
 #if USE_ASSETBUNDLE
+#if !UNITY_EDITOR && !INPKG_SERVER
 			//リソースバージョンを通信取得するまで待機
 			while (string.IsNullOrEmpty(Define.RESOURCE_VERSION))
 			{
 				yield return null;
 			}
-
+#endif
 			AssetList.Clear();
 			{
 				//サーバーのCRCデータ読み込み
