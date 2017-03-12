@@ -24,7 +24,6 @@ namespace Musha
 		}
 		//----	field	-----------------------------------------------------------------------------------
 		private bool IsReady;
-		private float LimitTime = 0.5f / Define.FRAMERATE;
 		private string LocalCRCPath;	//ローカルCRCバイナリのパス
 		private System.Action OnStop;
 		private List<Task.Request> RequestList = new List<Task.Request>();
@@ -53,11 +52,7 @@ namespace Musha
 		/// <summary>
 		/// 初期化
 		/// </summary>
-#if USE_ASSETBUNDLE
 		private IEnumerator Start()
-#else 
-		private void Start()
-#endif
 		{
 #if USE_ASSETBUNDLE
 #if !UNITY_EDITOR && !INPKG_SERVER
@@ -152,6 +147,8 @@ namespace Musha
 				RequestList[i].Call();
 			}
 			RequestList.Clear();
+
+			yield return null;
 		}
 		/// <summary>
 		/// エラーメッセージ
@@ -200,7 +197,7 @@ namespace Musha
 					}
 				}
 				//時間制限に達した
-				if (Sys.TimeSinceUpdateStart >= LimitTime)
+				if (Sys.TimeSinceUpdateStart >= Define.ASSETMANAGER_WORKLIMIT)
 				{
 					break;
 				}
@@ -743,9 +740,10 @@ namespace Musha
 			/// </summary>
 			private void Update_Instantiate()
 			{
+				var gobj = (GameObject)Instantiate(mObj);
 				if (OnEnd != null)
 				{
-					OnEnd((GameObject)Object.Instantiate(mObj));
+					OnEnd(gobj);
 					OnEnd = null;
 				}
 				IsEnd = true;

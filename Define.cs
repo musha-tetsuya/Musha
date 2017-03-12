@@ -21,6 +21,7 @@ namespace Musha
 		private float TapCancelRange = 32f;
 		private string ServerURL = "http://www.hogehoge.jp/";
 		private float DownloadTimeout = 10f;
+		private float AssetManagerWorkLimit = 0.5f / 30;
 
 		//partialコンストラクタで設定してはいけない変数
 		private string ServerAssetPath = null;
@@ -59,6 +60,10 @@ namespace Musha
 		/// ダウンロードのタイムアウト時間
 		/// </summary>
 		public static float DOWNLOAD_TIMEOUT { get { return Instance.DownloadTimeout; } }
+		/// <summary>
+		/// AssetManager処理時間制限
+		/// </summary>
+		public static float ASSETMANAGER_WORKLIMIT { get { return Instance.AssetManagerWorkLimit; } }
 		/// <summary>
 		/// サーバーURL
 		/// </summary>
