@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Musha {
+namespace MushaSystem {
 
 /// <summary>
 /// 表示領域設定
@@ -28,7 +28,7 @@ public class ViewportRectSetter : MonoBehaviour
 	/// 画面サイズ
 	/// </summary>
 	[SerializeField]
-	protected Vector2 screenSize = Define.SCREEN_SIZE;
+	protected Vector2 screenSize = Vector2.one;
 	/// <summary>
 	/// 配置
 	/// </summary>
@@ -154,4 +154,4 @@ public class ViewportRectSetter : MonoBehaviour
 	}
 }
 
-}//namespace Musha
+}//namespace MushaSystem
