@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace MushaEngine {
 
 /// <summary>
 /// 表示領域設定
 /// </summary>
+[AddComponentMenu("MushaEngine/ViewportRectSetter")]
 public class ViewportRectSetter : MonoBehaviour
 {
 	/// <summary>
@@ -154,4 +155,4 @@ public class ViewportRectSetter : MonoBehaviour
 	}
 }
 
-}//namespace MushaSystem
+}//namespace MushaEngine
