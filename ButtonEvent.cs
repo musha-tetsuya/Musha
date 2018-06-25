@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -9,20 +10,20 @@ namespace MushaEngine {
 /// <summary>
 /// ボタンイベント
 /// </summary>
-[AddComponentMenu("MushaEngine/ButtonTest")]
-public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
+[AddComponentMenu("MushaEngine/ButtonEvent")]
+public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerExitHandler, IPointerClickHandler
 {
 	/// <summary>
 	/// 状態
 	/// </summary>
-	public enum State
+	private enum State
 	{
-		None	 = 0,
-		Pressing = 1 << 0,
-		Began	 = 1 << 1,
-		Long	 = 1 << 2,
-		Released = 1 << 3,
-		Cancel	 = 1 << 4,
+		None		= 0,
+		Long		= 1 << 0,
+		Pressing	= 1 << 1,
+		Began		= 1 << 2,
+		Click		= 1 << 3,
+		Cancel		= 1 << 4,
 	}
 
 	/// <summary>
@@ -30,31 +31,40 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	/// </summary>
 	[SerializeField]public bool allowMultiTouch = false;
 	/// <summary>
-	/// 長押し判定までの時間
+	/// 入力を受け付けるマウスボタンタイプ
 	/// </summary>
-	[SerializeField]public float longPressedTime = 0.5f;
+	[EnumFlags(typeof(PointerEventData.InputButton))]
+	[SerializeField]public int enabledInputButton = 1 << (int)PointerEventData.InputButton.Left;
+	/// <summary>
+	/// 長押し＆連射開始までの待ち時間
+	/// </summary>
+	[SerializeField]public float waitLongMode = 1.0f;
+	/// <summary>
+	/// 連射間隔（フレーム）
+	/// </summary>
+	[SerializeField]public int repeatedInterval = 0;
 	/// <summary>
 	/// 押した瞬間に呼ばれるイベント
 	/// </summary>
 	[SerializeField]public UnityEvent onPressed = null;
 	/// <summary>
-	/// 長押し状態になった時に呼ばれるイベント
+	/// 長押し成立した瞬間に呼ばれるイベント
 	/// </summary>
 	[SerializeField]public UnityEvent onLongPressed = null;
 	/// <summary>
-	/// クリック成立時に呼ばれるイベント
+	/// クリックが成立した時に呼ばれるイベント
 	/// </summary>
 	[SerializeField]public UnityEvent onClick = null;
 	/// <summary>
-	/// ショートクリック成立時に呼ばれるイベント
+	/// ショートクリックが成立した時に呼ばれるイベント
 	/// </summary>
 	[SerializeField]public UnityEvent onShortClick = null;
 	/// <summary>
-	/// ロングクリック成立時に呼ばれるイベント
+	/// ロングクリックが成立した時に呼ばれるイベント
 	/// </summary>
 	[SerializeField]public UnityEvent onLongClick = null;
 	/// <summary>
-	/// キャンセル発生時（押したまま範囲外に出た時）に呼ばれるイベント
+	/// キャンセル発生時に呼ばれるイベント
 	/// </summary>
 	[SerializeField]public UnityEvent onCancel = null;
 
@@ -63,121 +73,164 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	/// </summary>
 	private State state = State.None;
 	/// <summary>
-	/// 長押し判定コルーチン
+	/// 押した指番号
 	/// </summary>
-	private Coroutine longPressedCoroutine = null;
-	
+	private List<int> pointerIdList = new List<int>();
+
 	/// <summary>
-	/// 押された瞬間
+	/// マルチタッチかどうか
 	/// </summary>
-	public bool isPressed		{ get { return this.state == (State.Pressing | State.Began); } }
+	public static bool isMultiTouch
+	{
+		get { return Input.touchCount > 1; }
+	}
+	/// <summary>
+	/// 長押し状態
+	/// </summary>
+	public bool isLong
+	{
+		get { return (this.state & State.Long) > 0; }
+	}
 	/// <summary>
 	/// 押されている間
 	/// </summary>
-	public bool isPressing		{ get { return (this.state & State.Pressing) > 0; } }
+	public bool isPressing
+	{
+		get { return (this.state & State.Pressing) > 0; }
+	}
 	/// <summary>
-	/// 長押し状態かどうか
+	/// 押された瞬間１フレームだけ通知
 	/// </summary>
-	public bool isLong			{ get { return (this.state & State.Long) > 0; } }
+	public bool isPressed
+	{
+		get { return this.state == (State.Pressing | State.Began); }
+	}
 	/// <summary>
-	/// 長押し状態になった瞬間
+	/// 長押し成立した瞬間 or 連射時
 	/// </summary>
-	public bool isLongPressed	{ get { return this.state == (State.Long | State.Pressing | State.Began); } }
+	public bool isNextPressed
+	{
+		get { return this.state == (State.Long | State.Pressing | State.Began); }
+	}
 	/// <summary>
-	/// クリック成立時
+	/// クリック成立時１フレームだけ通知
 	/// </summary>
-	public bool isClick			{ get { return (this.state & State.Released) > 0; } }
+	public bool isClick
+	{
+		get { return (this.state & State.Click) > 0; }
+	}
 	/// <summary>
-	/// キャンセル発生時
+	/// ショートクリック成立時１フレームだけ通知
 	/// </summary>
-	public bool isCancel		{ get { return this.state == State.Cancel; } }
+	public bool isShortClick
+	{
+		get { return !this.isLong && this.isClick; }
+	}
+	/// <summary>
+	/// ロングクリック成立時１フレームだけ通知
+	/// </summary>
+	public bool isLongClick
+	{
+		get { return this.isLong && this.isClick; }
+	}
+	/// <summary>
+	/// キャンセル発生時１フレームだけ通知
+	/// </summary>
+	public bool isCancel
+	{
+		get { return this.state == State.Cancel; }
+	}
 
 	/// <summary>
 	/// ボタンを押した時
 	/// </summary>
 	public void OnPointerDown(PointerEventData eventData)
 	{
-		//既に何らかの状態に入ってる時は受け付けない
-		if (this.state != State.None) return;
-		//マルチタッチ判定
-		if (!this.allowMultiTouch && IsMultiTouch()) return;
-		
-		//押下成立（１フレームだけBegan状態を通知）
-		this.state |= State.Pressing;
-		this.state |= State.Began;
-		StartCoroutine(this.WaitForEndOfFrameAction(() =>
-		{
-			this.state &= ~State.Began;
-		}));
+		//マルチタッチチェック
+		if (!this.allowMultiTouch && isMultiTouch) return;
 
-		//イベント実行
+		//マウス入力の場合、有効なマウスボタンタイプかどうかをチェック
+		if (eventData.pointerId < 0 && !IsEnabledInputButton(eventData.button)) return;
+
+		//ボタンを押した指番号を管理
+		if (!this.pointerIdList.Contains(eventData.pointerId))
+		{
+			this.pointerIdList.Add(eventData.pointerId);
+		}
+
+		//最初の１本目の指しか受け付けない
+		if (this.pointerIdList.Count == 1)
+		{
+			//押下成立
+			StartCoroutine(OnPressed());
+		}
+	}
+
+	/// <summary>
+	/// 押下成立時
+	/// </summary>
+	private IEnumerator OnPressed()
+	{
+		//押下成立
+		this.state |= State.Pressing | State.Began;
+
+		//押下イベント実行
 		if (this.onPressed != null)
 		{
 			this.onPressed.Invoke();
 		}
 
-		//長押し判定開始
-		this.longPressedCoroutine = StartCoroutine(this.WaitForLongPressedTimeAction(() =>
-		{
-			//長押し成立（１フレームだけBegan状態を通知）
-			this.state |= State.Long;
-			this.state |= State.Began;
-			StartCoroutine(this.WaitForEndOfFrameAction(() =>
-			{
-				this.state &= ~State.Began;
-			}));
+		//１フレーム後に通知を解除
+		yield return new WaitForEndOfFrame();
+		this.state &= ~State.Began;
 
-			//イベント実行
-			if (this.onLongPressed != null)
+		//長押し成立までの時間を待つ
+		if (this.waitLongMode > Time.deltaTime)
+		{
+			yield return new WaitForSeconds(this.waitLongMode - Time.deltaTime);
+			yield return new WaitForEndOfFrame();
+		}
+
+		for (int i = 0; ; i++)
+		{
+			//長押し（連射）成立
+			this.state |= State.Long | State.Pressing | State.Began;
+
+			if (i == 0)
 			{
-				this.onLongPressed.Invoke();
+				//長押しイベント実行
+				if (this.onLongPressed != null)
+				{
+					this.onLongPressed.Invoke();
+				}
 			}
 
-			//コルーチン終了
-			this.longPressedCoroutine = null;
-		}));
-	}
-
-	/// <summary>
-	/// ボタンを離した時
-	/// </summary>
-	public void OnPointerUp(PointerEventData eventData)
-	{
-		//押下中しか受け付けない
-		if (!this.isPressing) return;
-
-		//クリック成立（通知は１フレームだけ）
-		this.state &= ~State.Pressing;
-		this.state |= State.Released;
-		StartCoroutine(this.WaitForEndOfFrameAction(() =>
-		{
-			this.state = State.None;
-		}));
-
-		//長押し判定の中断
-		if (this.longPressedCoroutine != null)
-		{
-			StopCoroutine(this.longPressedCoroutine);
-			this.longPressedCoroutine = null;
-		}
-
-		//イベント実行
-		if (this.onClick != null)
-		{
-			this.onClick.Invoke();
-		}
-		if (!this.isLong)
-		{
-			if (this.onShortClick != null)
+			//連射イベント実行判定
+			bool isRepeatPressed = this.repeatedInterval > 0;
+			if (isRepeatPressed)
 			{
-				this.onShortClick.Invoke();
+				//連射イベント実行
+				if (this.onPressed != null)
+				{
+					this.onPressed.Invoke();
+				}
 			}
-		}
-		else
-		{
-			if (this.onLongClick != null)
+
+			//１フレーム後に通知を解除
+			yield return new WaitForEndOfFrame();
+			this.state &= ~State.Began;
+
+			if (isRepeatPressed && this.repeatedInterval > 0)
 			{
-				this.onLongClick.Invoke();
+				//次の連射実行を待つ
+				for (int j = 1, jmax = this.repeatedInterval; j < jmax; j++)
+				{
+					yield return new WaitForEndOfFrame();
+				}
+			}
+			else
+			{
+				break;
 			}
 		}
 	}
@@ -187,27 +240,85 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	/// </summary>
 	public void OnPointerExit(PointerEventData eventData)
 	{
-		//押下中しか受け付けない
-		if (!this.isPressing) return;
+		//何も管理していないのでreturn
+		if (this.pointerIdList.Count == 0) return;
 
-		//キャンセル発生（通知は１フレームだけ）
-		this.state = State.Cancel;
-		StartCoroutine(this.WaitForEndOfFrameAction(() =>
+		//マウスの場合-1しか来ない
+		if (eventData.pointerId == -1)
 		{
-			this.state = State.None;
-		}));
-
-		//長押し判定の中断
-		if (this.longPressedCoroutine != null)
+			//管理している指番号を全部除去
+			this.pointerIdList.Clear();
+		}
+		//マウス以外の場合
+		else
 		{
-			StopCoroutine(this.longPressedCoroutine);
-			this.longPressedCoroutine = null;
+			//範囲外に出た指番号をリストから除去
+			this.pointerIdList.Remove(eventData.pointerId);
 		}
 
-		//イベント実行
-		if (this.onCancel != null)
+		//全ての指がボタンの範囲外に出た
+		if (this.pointerIdList.Count == 0)
 		{
-			this.onCancel.Invoke();
+			//長押し判定の中断
+			StopAllCoroutines();
+
+			//キャンセル発生（１フレームだけ通知）
+			this.state = State.Cancel;
+			StartCoroutine(WaitForEndOfFrameAction(() =>
+			{
+				this.state = State.None;
+			}));
+
+			//イベント実行
+			if (this.onCancel != null)
+			{
+				this.onCancel.Invoke();
+			}
+		}
+	}
+
+	/// <summary>
+	/// クリック成立時
+	/// </summary>
+	public void OnPointerClick(PointerEventData eventData)
+	{
+		//クリック成立した指番号をリストから除去
+		if (this.pointerIdList.Remove(eventData.pointerId))
+		{
+			//最後の指の時だけクリック成立
+			if (this.pointerIdList.Count == 0)
+			{
+				//長押し判定の中断
+				StopAllCoroutines();
+
+				//クリック成立（１フレームだけ通知）
+				this.state |= State.Click;
+				this.state &= ~State.Pressing;
+				StartCoroutine(WaitForEndOfFrameAction(() =>
+				{
+					this.state = State.None;
+				}));
+
+				//イベント実行
+				if (this.onClick != null)
+				{
+					this.onClick.Invoke();
+				}
+				if (!this.isLong)
+				{
+					if (this.onShortClick != null)
+					{
+						this.onShortClick.Invoke();
+					}
+				}
+				else
+				{
+					if (this.onLongClick != null)
+					{
+						this.onLongClick.Invoke();
+					}
+				}
+			}
 		}
 	}
 
@@ -216,8 +327,16 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	/// </summary>
 	private void OnDisable()
 	{
+		this.pointerIdList.Clear();
 		this.state = State.None;
-		this.longPressedCoroutine = null;
+	}
+
+	/// <summary>
+	/// 有効なボタンタイプかどうか
+	/// </summary>
+	private bool IsEnabledInputButton(PointerEventData.InputButton button)
+	{
+		return (this.enabledInputButton & (1 << (int)button)) > 0;
 	}
 
 	/// <summary>
@@ -227,23 +346,6 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	{
 		yield return new WaitForEndOfFrame();
 		action();
-	}
-
-	/// <summary>
-	/// 長押しまでの時間を待ってフレーム終了時にアクション実行
-	/// </summary>
-	private IEnumerator WaitForLongPressedTimeAction(Action action)
-	{
-		yield return new WaitForSeconds(this.longPressedTime);
-		yield return this.WaitForEndOfFrameAction(action);
-	}
-
-	/// <summary>
-	/// マルチタッチかどうか
-	/// </summary>
-	public static bool IsMultiTouch()
-	{
-		return Input.touchSupported && Input.touchCount > 1;
 	}
 }
 
