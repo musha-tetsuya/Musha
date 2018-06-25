@@ -34,31 +34,61 @@ public class SoftwareGamePad : MonoBehaviour
 	/// </summary>
 	public interface IListner
 	{
+		/// <summary>
+		/// ボタン押下時に呼ばれる
+		/// </summary>
 		void OnPressed(ButtonType buttonType);
+		/// <summary>
+		/// 長押し成立時に呼ばれる
+		/// </summary>
 		void OnLongPressed(ButtonType buttonType);
+		/// <summary>
+		/// クリック成立時に呼ばれる
+		/// </summary>
 		void OnClick(ButtonType buttonType);
+		/// <summary>
+		/// ショートクリック成立時に呼ばれる
+		/// </summary>
 		void OnShortClick(ButtonType buttonType);
+		/// <summary>
+		/// ロングクリック成立時に呼ばれる
+		/// </summary>
 		void OnLongClick(ButtonType buttonType);
+		/// <summary>
+		/// キャンセル発生時に呼ばれる
+		/// </summary>
 		void OnCancel(ButtonType buttonType);
 	}
 
-	[SerializeField]
-	private RectTransform canvasTransform = null;
+	/// <summary>
+	/// キャンバスのトランスフォーム
+	/// </summary>
+	[SerializeField]private RectTransform canvasTransform = null;
+	/// <summary>
+	/// ゲームパッドの左側
+	/// </summary>
+	[SerializeField]private RectTransform areaLeft = null;
+	/// <summary>
+	/// ゲームパッドの右側
+	/// </summary>
+	[SerializeField]private RectTransform areaRight = null;
+	/// <summary>
+	/// パッドの左右合わせたサイズ
+	/// </summary>
+	[SerializeField]private Vector2 totalAreaSize = new Vector2(8.6f, 4.3f);
+	/// <summary>
+	/// ボタンイベント
+	/// </summary>
+	[SerializeField]private ButtonEvent[] buttonEvent = null;
 
-	[SerializeField]
-	private RectTransform groupLeft = null;
-	[SerializeField]
-	private RectTransform groupRight = null;
-
-	[SerializeField]
-	private Vector2 padSize = new Vector2(8.6f, 4.3f);
-
-	[SerializeField]
-	private ButtonEvent[] buttonEvent = null;
-
-	private ButtonType state = 0;
+	/// <summary>
+	/// １フレーム前のキャンバスサイズ
+	/// </summary>
+	private Vector2? beforeCanvasSize = null;
+	/// <summary>
+	///
+	/// </summary>
 	private List<IListner> listnerList = new List<IListner>();
-	private Vector2 beforeCanvasSize = Vector2.zero;
 
 	/// <summary>
 	/// Start
@@ -91,9 +121,10 @@ public class SoftwareGamePad : MonoBehaviour
 			this.beforeCanvasSize = this.canvasTransform.sizeDelta;
 
 			//現在のキャンバスサイズの場合、パッドのスケールをどれぐらいにするべきか計算（最大１）
-			var scale = this.canvasTransform.sizeDelta / this.padSize;
-			float padScaleValue = Mathf.Min(scale.x, scale.y, 1f);
-			this.groupLeft.localScale = this.groupRight.localScale = new Vector3(padScaleValue, padScaleValue, 1f);
+			var scale = this.canvasTransform.sizeDelta / this.totalAreaSize;
+			float areaScaleValue = Mathf.Min(scale.x, scale.y, 1f);
+			this.areaLeft.localScale =
+			this.areaRight.localScale = new Vector3(areaScaleValue, areaScaleValue, 1f);
 		}
 	}
 
@@ -102,20 +133,12 @@ public class SoftwareGamePad : MonoBehaviour
 	/// </summary>
 	private void RaycastIgnoreTransparent()
 	{
-		int[] ids =
-		{
-			(int)ButtonType.A,
-			(int)ButtonType.B,
-			(int)ButtonType.X,
-			(int)ButtonType.Y,
-			(int)ButtonType.Start,
-			(int)ButtonType.Select,
-		};
-
-		foreach (int i in ids)
-		{
-			this.buttonEvent[i].GetComponent<Image>().alphaHitTestMinimumThreshold = 1f;
-		}
+		this.buttonEvent[(int)ButtonType.A].GetComponent<Image>().alphaHitTestMinimumThreshold =
+		this.buttonEvent[(int)ButtonType.B].GetComponent<Image>().alphaHitTestMinimumThreshold =
+		this.buttonEvent[(int)ButtonType.X].GetComponent<Image>().alphaHitTestMinimumThreshold =
+		this.buttonEvent[(int)ButtonType.Y].GetComponent<Image>().alphaHitTestMinimumThreshold =
+		this.buttonEvent[(int)ButtonType.Start].GetComponent<Image>().alphaHitTestMinimumThreshold =
+		this.buttonEvent[(int)ButtonType.Select].GetComponent<Image>().alphaHitTestMinimumThreshold = 1f;
 	}
 
 	/// <summary>
@@ -208,6 +231,9 @@ public class SoftwareGamePad : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// ボタンがキャンセルされた瞬間に呼ばれる
+	/// </summary>
 	public void OnCancel(int buttonType)
 	{
 		for (int i = 0, imax = this.listnerList.Count; i < imax; i++)
@@ -215,8 +241,6 @@ public class SoftwareGamePad : MonoBehaviour
 			this.listnerList[i].OnCancel((ButtonType)buttonType);
 		}
 	}
-
-
 }
 
 }//namespace MushaEngine
