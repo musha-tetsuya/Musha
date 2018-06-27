@@ -1,26 +1,115 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
-namespace Musha
+namespace MushaEngine {
+
+/// <summary>
+/// BinaryReader拡張クラス
+/// </summary>
+public static class BinaryReaderEx
 {
-	public class BinaryReaderEx : BinaryReader
+	/// <summary>
+	/// これ以上読み込めない場合true
+	/// </summary>
+	public static bool IsEnd(this BinaryReader reader)
 	{
-		public BinaryReaderEx(Stream input) : base(input) { }
-		public BinaryReaderEx(Stream input, Encoding encoding) : base(input, encoding) { }
-		public bool IsEnd { get { return BaseStream.Length <= BaseStream.Position; } }
-		public bool ReadBoolean(bool defaultValue) { return IsEnd ? defaultValue : ReadBoolean(); }
-		public byte ReadByte(byte defaultValue) { return IsEnd ? defaultValue : ReadByte(); }
-		public double ReadDouble(double defaultValue) { return IsEnd ? defaultValue : ReadDouble(); }
-		public short ReadInt16(short defaultValue) { return IsEnd ? defaultValue : ReadInt16(); }
-		public int ReadInt32(int defaultValue) { return IsEnd ? defaultValue : ReadInt32(); }
-		public long ReadInt64(long defaultValue) { return IsEnd ? defaultValue : ReadInt64(); }
-		public sbyte ReadSByte(sbyte defaultValue) { return IsEnd ? defaultValue : ReadSByte(); }
-		public float ReadSingle(float defaultValue) { return IsEnd ? defaultValue : ReadSingle(); }
-		public string ReadString(string defaultValue) { return IsEnd ? defaultValue : ReadString(); }
-		public ushort ReadUInt16(ushort defaultValue) { return IsEnd ? defaultValue : ReadUInt16(); }
-		public uint ReadUInt32(uint defaultValue) { return IsEnd ? defaultValue : ReadUInt32(); }
-		public ulong ReadUInt64(ulong defaultValue) { return IsEnd ? defaultValue : ReadUInt64(); }
+		return reader.BaseStream.Length <= reader.BaseStream.Position;
+	}
+	/// <summary>
+	/// Boolean値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static bool ReadBoolean(this BinaryReader reader, bool defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadBoolean();
+	}
+	/// <summary>
+	/// Byte値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static byte ReadByte(this BinaryReader reader, byte defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadByte();
+	}
+	/// <summary>
+	/// Double値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static double ReadDouble(this BinaryReader reader, double defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadDouble();
+	}
+	/// <summary>
+	/// Int16値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static short ReadInt16(this BinaryReader reader, short defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadInt16();
+	}
+	/// <summary>
+	/// Int32値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static int ReadInt32(this BinaryReader reader, int defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadInt32();
+	}
+	/// <summary>
+	/// Int64値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static long ReadInt64(this BinaryReader reader, long defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadInt64();
+	}
+	/// <summary>
+	/// SByte値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static sbyte ReadSByte(this BinaryReader reader, sbyte defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadSByte();
+	}
+	/// <summary>
+	/// Single値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static float ReadSingle(this BinaryReader reader, float defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadSingle();
+	}
+	/// <summary>
+	/// String値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static string ReadString(this BinaryReader reader, string defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadString();
+	}
+	/// <summary>
+	/// UInt16値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static ushort ReadUInt16(this BinaryReader reader, ushort defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadUInt16();
+	}
+	/// <summary>
+	/// UInt32値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static uint ReadUInt32(this BinaryReader reader, uint defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadUInt32();
+	}
+	/// <summary>
+	/// UInt64値を読み込む
+	/// </summary>
+	/// <param name="defaultValue">読み込めなかった場合に返す値</param>
+	public static ulong ReadUInt64(this BinaryReader reader, ulong defaultValue)
+	{
+		return reader.IsEnd() ? defaultValue : reader.ReadUInt64();
 	}
 }
+
+}//namespace MushaEngine
