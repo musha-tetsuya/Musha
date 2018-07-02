@@ -26,6 +26,19 @@ public class Define
 #elif UNITY_IOS
 		Application.persistentDataPath + "/" + localDataDirectoryName;
 #endif
+	/// <summary>
+	/// サーバーのアセットバンドルディレクトリ名
+	/// </summary>
+	public const string serverAssetBundleDirectoryName =
+#if UNITY_ANDROID
+		"AssetBundleAndroid";
+#elif UNITY_IOS
+		"AssetBundleIos";
+#elif UNITY_STANDALONE_WIN
+		"AssetBundleWindows";
+#elif UNITY_STANDALONE_OSX
+		"AssetBundleOSX"
+#endif
 }
 
 }//namespace MushaEngine
