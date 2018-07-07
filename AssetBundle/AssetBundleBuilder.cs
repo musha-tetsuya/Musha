@@ -75,7 +75,7 @@ public class AssetBundleBuilder
 		//保存先決定
 		destPath = path;
 		//保存先内に専用ディレクトリを作成
-		string destSubPath = destPath + "/" + Define.serverAssetBundleDirectoryName;
+		string destSubPath = destPath + "/" + Define.assetBundleDirectoryName;
 		Directory.CreateDirectory(destSubPath);
 
 		//選択したアセットにアセットバンドル名を設定する
@@ -94,7 +94,7 @@ public class AssetBundleBuilder
 			else
 			{
 				//アセットパスをアセットバンドル名にする
-				string assetBundleName = assetPath.Remove(0, "Assets/".Length);
+				string assetBundleName = assetPath;
 				if (!string.IsNullOrEmpty(extension))
 				{
 					//拡張子は取り除く
@@ -112,7 +112,7 @@ public class AssetBundleBuilder
 		var manifest = BuildPipeline.BuildAssetBundles(destSubPath, BuildAssetBundleOptions.None, BUILD_TARGET);
 
 		//ResourceList.csvを作成
-		using (var writer = new StreamWriter(destSubPath + "/ResourceList.csv", false, Encoding.UTF8))
+		using (var writer = new StreamWriter(destSubPath + "/AssetBundleDataList.csv", false, Encoding.UTF8))
 		{
 			foreach (var assetBundleName in manifest.GetAllAssetBundles())
 			{

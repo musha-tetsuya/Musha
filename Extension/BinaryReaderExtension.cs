@@ -5,7 +5,7 @@ namespace MushaEngine {
 /// <summary>
 /// BinaryReader拡張クラス
 /// </summary>
-public static class BinaryReaderEx
+public static class BinaryReaderExtension
 {
 	/// <summary>
 	/// これ以上読み込めない場合true
