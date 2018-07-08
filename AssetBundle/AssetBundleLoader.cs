@@ -11,6 +11,7 @@ namespace MushaEngine {
 /// <summary>
 /// アセットバンドル読み込みクラス
 /// </summary>
+[AddComponentMenu("MushaEngine/AssetBundleLoader")]
 public partial class AssetBundleLoader : MonoBehaviour
 {
 	/// <summary>
