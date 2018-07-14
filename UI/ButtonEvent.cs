@@ -264,7 +264,7 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerExitHandl
 
 			//キャンセル発生（１フレームだけ通知）
 			this.state = State.Cancel;
-			StartCoroutine(WaitForEndOfFrameAction(() =>
+			StartCoroutine(CoroutineUtility.WaitForEndOfFrameAction(() =>
 			{
 				this.state = State.None;
 			}));
@@ -294,7 +294,7 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerExitHandl
 				//クリック成立（１フレームだけ通知）
 				this.state |= State.Click;
 				this.state &= ~State.Pressing;
-				StartCoroutine(WaitForEndOfFrameAction(() =>
+				StartCoroutine(CoroutineUtility.WaitForEndOfFrameAction(() =>
 				{
 					this.state = State.None;
 				}));
@@ -337,15 +337,6 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerExitHandl
 	private bool IsEnabledInputButton(PointerEventData.InputButton button)
 	{
 		return (this.enabledInputButton & (1 << (int)button)) > 0;
-	}
-
-	/// <summary>
-	/// フレーム終了時にアクション実行
-	/// </summary>
-	private IEnumerator WaitForEndOfFrameAction(Action action)
-	{
-		yield return new WaitForEndOfFrame();
-		action();
 	}
 }
 

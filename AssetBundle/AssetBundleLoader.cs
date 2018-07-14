@@ -191,8 +191,11 @@ public partial class AssetBundleLoader : MonoBehaviour
 		//ロード済み
 		else if (assetOperation.GetStatus() == AssetOperationBase.Status.isLoaded)
 		{
-			//コールバック実行
-			onLoad.SafetyInvoke(assetOperation.GetAsset<T>());
+			//１フレーム後にコールバック実行
+			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
+			{
+				onLoad.SafetyInvoke(assetOperation.GetAsset<T>());
+			}));
 		}
 		//ロード中
 		else
@@ -242,8 +245,11 @@ public partial class AssetBundleLoader : MonoBehaviour
 		//ロード済み
 		else if (assetOperation.GetStatus() == AssetOperationBase.Status.isLoaded)
 		{
-			//コールバック実行
-			onLoad.SafetyInvoke(assetOperation.GetAllAssets<T>());
+			//１フレーム後にコールバック実行
+			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
+			{
+				onLoad.SafetyInvoke(assetOperation.GetAllAssets<T>());
+			}));
 		}
 		//ロード中
 		else
@@ -293,8 +299,11 @@ public partial class AssetBundleLoader : MonoBehaviour
 		//ロード済み
 		else if (assetOperation.GetStatus() == AssetOperationBase.Status.isLoaded)
 		{
-			//コールバック実行
-			onLoad.SafetyInvoke(assetOperation.GetAllAssets<T>());
+			//１フレーム後にコールバック実行
+			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
+			{
+				onLoad.SafetyInvoke(assetOperation.GetAllAssets<T>());
+			}));
 		}
 		//ロード中
 		else
