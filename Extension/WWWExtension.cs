@@ -11,7 +11,10 @@ namespace MushaEngine {
 /// </summary>
 public static class WWWExtension
 {
-	public static IEnumerator Wait(this WWW www, float timeout = 30f)
+	/// <summary>
+	/// 完了待ち（タイムアウト付き）
+	/// </summary>
+	public static IEnumerator WaitOrTimeout(this WWW www, float timeout = 30f)
 	{
 		timeout += Time.realtimeSinceStartup;
 
@@ -22,4 +25,4 @@ public static class WWWExtension
 	}
 }
 
-}
+}//namespace MushaEngine

@@ -112,7 +112,7 @@ public class AssetBundleBuilder
 		var manifest = BuildPipeline.BuildAssetBundles(destSubPath, BuildAssetBundleOptions.None, BUILD_TARGET);
 
 		//ResourceList.csvを作成
-		using (var writer = new StreamWriter(destSubPath + "/AssetBundleDataList.csv", false, Encoding.UTF8))
+		using (var writer = new StreamWriter(destSubPath + "/ResourceList.csv", false, Encoding.UTF8))
 		{
 			foreach (var assetBundleName in manifest.GetAllAssetBundles())
 			{
@@ -123,8 +123,13 @@ public class AssetBundleBuilder
 				{
 					long fileSize = new FileInfo(assetBundlePath).Length;
 
-					//アセットバンドル名, CRC値, ファイルサイズを書き込む
-					writer.WriteLine(string.Format("{0},{1},{2}", assetBundleName, crc, fileSize));
+					List<string> dataList = new List<string>();
+					dataList.Add(assetBundleName);		//アセットバンドル名
+					dataList.Add(crc.ToString());		//CRC値
+					dataList.Add(fileSize.ToString());	//ファイルサイズ
+
+					//「,」区切りでCSVに書き込む
+					writer.WriteLine(string.Join(",", dataList.ToArray()));
 				}
 			}
 		}
