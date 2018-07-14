@@ -52,6 +52,16 @@ public class AssetBundleBuilder
 	}
 
 	/// <summary>
+	/// AssetBundleビルドの有効条件
+	/// </summary>
+	[MenuItem("MushaEditor/BuildAssetBundle", true)]
+	[MenuItem("Assets/MushaEditor/BuildAssetBundle", true)]
+	private static bool ValidateBuildAssetBundle()
+	{
+		return Selection.objects.Any(AssetDatabase.Contains);
+	}
+
+	/// <summary>
 	/// AssetBundleビルド
 	/// Projectウィンドウ内で選択したアセットにその階層名でアセットバンドル名を付けてビルドする
 	/// </summary>
@@ -59,13 +69,6 @@ public class AssetBundleBuilder
 	[MenuItem("Assets/MushaEditor/BuildAssetBundle")]
 	private static void BuildAssetBundle()
 	{
-		//何も選択されていないのでreturn
-		if (Selection.objects == null || Selection.objects.Length == 0)
-		{
-			Debug.LogWarning("何も選択されていません");
-			return;
-		}
-
 		string path = EditorUtility.SaveFolderPanel("AssetBundle保存先の選択", destPath, "");
 		if (string.IsNullOrEmpty(path))
 		{
@@ -79,7 +82,7 @@ public class AssetBundleBuilder
 		Directory.CreateDirectory(destSubPath);
 
 		//選択したアセットにアセットバンドル名を設定する
-		foreach (var asset in Selection.objects)
+		foreach (var asset in Selection.objects.Where(AssetDatabase.Contains))
 		{
 			//アセットパス
 			string assetPath = AssetDatabase.GetAssetPath(asset);
