@@ -52,18 +52,8 @@ public class AssetBundleBuilder
 	}
 
 	/// <summary>
-	/// AssetBundleビルドの有効条件
-	/// </summary>
-	[MenuItem("MushaEditor/BuildAssetBundle", true)]
-	[MenuItem("Assets/MushaEditor/BuildAssetBundle", true)]
-	private static bool ValidateBuildAssetBundle()
-	{
-		return Selection.objects.Any(AssetDatabase.Contains);
-	}
-
-	/// <summary>
 	/// AssetBundleビルド
-	/// Projectウィンドウ内で選択したアセットにその階層名でアセットバンドル名を付けてビルドする
+	/// Projectウィンドウ内で選択しているアセットにはその階層名のアセットバンドル名を付ける
 	/// </summary>
 	[MenuItem("MushaEditor/BuildAssetBundle")]
 	[MenuItem("Assets/MushaEditor/BuildAssetBundle")]
