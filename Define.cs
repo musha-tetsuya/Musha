@@ -25,7 +25,7 @@ public class Define
 #elif UNITY_STANDALONE_WIN
 		"AssetBundleWindows";
 #elif UNITY_STANDALONE_OSX
-		"AssetBundleOSX"
+		"AssetBundleOSX";
 #endif
 
 	/// <summary>

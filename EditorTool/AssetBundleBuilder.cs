@@ -14,12 +14,24 @@ namespace MushaEditor {
 /// <summary>
 /// AssetBundleビルダー
 /// </summary>
-public class AssetBundleBuilder
+public class AssetBundleBuilder : EditorWindow
 {
+	/// <summary>
+	/// アセットバンドル名付与対象のアセット群
+	/// </summary>
+	private IEnumerable<UnityEngine.Object> addNameTargets = null;
+	/// <summary>
+	/// AssetBundle出力先
+	/// </summary>
+	private string destSubPath = null;
+	/// <summary>
+	/// アセットバンドル名付与対象表示のスクロール位置
+	/// </summary>
+	private Vector2 scrollPosition = Vector2.zero;
 	/// <summary>
 	/// ビルドターゲット
 	/// </summary>
-	private const BuildTarget BUILD_TARGET =
+	private BuildTarget buildTarget =
 #if UNITY_ANDROID
 		BuildTarget.Android;
 #elif UNITY_IOS
@@ -29,63 +41,82 @@ public class AssetBundleBuilder
 #elif UNITY_STANDALONE_OSX
 		BuildTarget.StandaloneOSX;
 #endif
-
 	/// <summary>
 	/// AssetBundle保存先のEditorPrefsキー
 	/// </summary>
-	private static readonly string destPathKey = typeof(AssetBundleBuilder).FullName + ".destPath";
+	private string destPathKey
+	{
+		get { return GetType().FullName + ".destPath"; }
+	}
 	/// <summary>
 	/// AssetBundle保存先
 	/// </summary>
-	private static string destPath
+	private string destPath
 	{
 		get
 		{
-			return EditorPrefs.HasKey(destPathKey) && Directory.Exists(EditorPrefs.GetString(destPathKey))
-				 ? EditorPrefs.GetString(destPathKey)
-				 : (destPath = Application.dataPath);
+			return EditorPrefs.HasKey(this.destPathKey) && Directory.Exists(EditorPrefs.GetString(this.destPathKey))
+				 ? EditorPrefs.GetString(this.destPathKey)
+				 : (this.destPath = Application.dataPath);
 		}
 		set
 		{
-			EditorPrefs.SetString(destPathKey, value);
+			EditorPrefs.SetString(this.destPathKey, value);
 		}
 	}
 
 	/// <summary>
-	/// AssetBundleビルド
-	/// Projectウィンドウ内で選択しているアセットにはその階層名のアセットバンドル名を付ける
+	/// GUIウィンドウを開く
 	/// </summary>
-	[MenuItem("MushaEditor/BuildAssetBundle")]
-	[MenuItem("Assets/MushaEditor/BuildAssetBundle")]
-	private static void BuildAssetBundle()
+	[MenuItem("MushaEditor/AssetBundleBuilder")]
+	private static void Open()
 	{
-		string path = EditorUtility.SaveFolderPanel("AssetBundle保存先の選択", destPath, "");
-		if (string.IsNullOrEmpty(path))
-		{
-			return;
-		}
+		EditorWindow.GetWindow<AssetBundleBuilder>();
+	}
 
-		//保存先決定
-		destPath = path;
-		//保存先内に専用ディレクトリを作成
-		string destSubPath = destPath + "/" + Define.assetBundleDirectoryName;
-		Directory.CreateDirectory(destSubPath);
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	private void OnEnable()
+	{
+		this.destSubPath = this.destPath + "/" + Define.assetBundleDirectoryName;
+		this.OnSelectionChange();
+	}
 
-		//選択したアセットにアセットバンドル名を設定する
-		foreach (var asset in Selection.objects.Where(AssetDatabase.Contains))
-		{
-			//アセットパス
-			string assetPath = AssetDatabase.GetAssetPath(asset);
-			//拡張子
-			string extension = Path.GetExtension(assetPath);
-
-			//.csファイルはアセットバンドル化出来ない
-			if (extension.Equals(".cs", StringComparison.OrdinalIgnoreCase))
+	/// <summary>
+	/// 選択内容に変化があった時
+	/// </summary>
+	private void OnSelectionChange()
+	{
+		//現在選択中のオブジェクトの中からアセットバンドル名を付与出来るものだけ抽出する
+		this.addNameTargets = Selection.objects
+			.Where(AssetDatabase.Contains)
+			.GroupBy(x => AssetDatabase.GetAssetPath(x))
+			.Select(x => x.First())
+			.Where(x =>
 			{
-				Debug.LogWarningFormat("{0}をアセットバンドルにすることは出来ません", assetPath);
-			}
-			else
+				string assetPath = AssetDatabase.GetAssetPath(x);
+				string extension = Path.GetExtension(assetPath);
+				return !extension.Equals(".cs", StringComparison.OrdinalIgnoreCase);
+			});
+
+		this.Repaint();
+	}
+
+	private void OnGUI()
+	{
+		if (GUILayout.Button("AssetBundleビルド", GUILayout.Width(150)))
+		{
+			//保存先ディレクトリを作成
+			Directory.CreateDirectory(this.destSubPath);
+
+			//選択しているアセットにアセットバンドル名付与する
+			foreach (var asset in this.addNameTargets)
 			{
+				//アセットパス
+				string assetPath = AssetDatabase.GetAssetPath(asset);
+				//拡張子
+				string extension = Path.GetExtension(assetPath);
 				//アセットパスをアセットバンドル名にする
 				string assetBundleName = assetPath;
 				if (!string.IsNullOrEmpty(extension))
@@ -93,42 +124,75 @@ public class AssetBundleBuilder
 					//拡張子は取り除く
 					assetBundleName = assetBundleName.Replace(extension, null);
 				}
-
 				//インポータに設定
 				var importer = AssetImporter.GetAtPath(assetPath);
 				importer.assetBundleName = assetBundleName;
 				importer.SaveAndReimport();
 			}
-		}
 
-		//アセットバンドルビルド実行（マニフェスト情報取得）
-		var manifest = BuildPipeline.BuildAssetBundles(destSubPath, BuildAssetBundleOptions.None, BUILD_TARGET);
-
-		//ResourceList.csvを作成
-		using (var writer = new StreamWriter(destSubPath + "/ResourceList.csv", false, Encoding.UTF8))
-		{
-			foreach (var assetBundleName in manifest.GetAllAssetBundles())
+			//アセットバンドルビルド実行（マニフェスト情報取得）
+			var manifest = BuildPipeline.BuildAssetBundles(this.destSubPath, BuildAssetBundleOptions.None, this.buildTarget);
+			if (manifest == null)
 			{
-				string assetBundlePath = destSubPath + "/" + assetBundleName;
-				uint crc = 0;
-				
-				if (BuildPipeline.GetCRCForAssetBundle(assetBundlePath, out crc))
+				return;
+			}
+
+			//ResourceList.csvを作成
+			using (var writer = new StreamWriter(this.destSubPath + "/ResourceList.csv", false, Encoding.UTF8))
+			{
+				foreach (var assetBundleName in manifest.GetAllAssetBundles())
 				{
-					long fileSize = new FileInfo(assetBundlePath).Length;
+					string assetBundlePath = this.destSubPath + "/" + assetBundleName;
+					uint crc = 0;
+				
+					if (BuildPipeline.GetCRCForAssetBundle(assetBundlePath, out crc))
+					{
+						long fileSize = new FileInfo(assetBundlePath).Length;
 
-					List<string> dataList = new List<string>();
-					dataList.Add(assetBundleName);		//アセットバンドル名
-					dataList.Add(crc.ToString());		//CRC値
-					dataList.Add(fileSize.ToString());	//ファイルサイズ
+						List<string> dataList = new List<string>();
+						dataList.Add(assetBundleName);		//アセットバンドル名
+						dataList.Add(crc.ToString());		//CRC値
+						dataList.Add(fileSize.ToString());	//ファイルサイズ
 
-					//「,」区切りでCSVに書き込む
-					writer.WriteLine(string.Join(",", dataList.ToArray()));
+						//「,」区切りでCSVに書き込む
+						writer.WriteLine(string.Join(",", dataList.ToArray()));
+					}
 				}
 			}
+
+			AssetDatabase.Refresh();
+			Debug.Log("BuildAssetBundle finished.");
 		}
 
-		AssetDatabase.Refresh();
-		Debug.Log("BuildAssetBundle finished.");
+		GUILayout.BeginHorizontal();
+		{
+			if (GUILayout.Button("変更", GUILayout.ExpandWidth(false)))
+			{
+				string path = EditorUtility.SaveFolderPanel("AssetBundle保存先の選択", this.destPath, "");
+				if (!string.IsNullOrEmpty(path))
+				{
+					//保存先決定
+					this.destPath = path;
+					this.destSubPath = this.destPath + "/" + Define.assetBundleDirectoryName;
+				}
+			}
+
+			GUILayout.Label("出力先", GUILayout.ExpandWidth(false));
+
+			this.destSubPath = GUILayout.TextField(this.destSubPath);
+		}
+		GUILayout.EndHorizontal();
+
+		EditorGUILayout.HelpBox("アセットバンドル名を付与したいアセットがあればProjectウィンドウ内から選択して下さい。", MessageType.Info);
+
+		this.scrollPosition = GUILayout.BeginScrollView(this.scrollPosition);
+		{
+			foreach (var asset in this.addNameTargets)
+			{
+				GUILayout.Label(AssetDatabase.GetAssetPath(asset));
+			}
+		}
+		GUILayout.EndScrollView();
 	}
 }
 
