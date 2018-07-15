@@ -1,5 +1,8 @@
 ﻿using System;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace MushaEngine {
 public partial class AssetBundleLoader : MonoBehaviour {
@@ -20,9 +23,13 @@ protected abstract class AssetOperationBase
 	}
 
 	/// <summary>
+	/// アセットタイプ
+	/// </summary>
+	public Type type { get; private set; }
+	/// <summary>
 	/// アセット名
 	/// </summary>
-	public string assetName { get; protected set; }
+	public string assetName { get; private set; }
 	/// <summary>
 	/// AssetBundleRequest
 	/// </summary>
@@ -33,10 +40,20 @@ protected abstract class AssetOperationBase
 	private Action onLoad = null;
 
 	/// <summary>
+	/// construct
+	/// </summary>
+	protected AssetOperationBase(string assetName, Type type)
+	{
+		this.assetName = assetName;
+		this.type = type;
+	}
+
+	/// <summary>
 	/// destruct
 	/// </summary>
 	~AssetOperationBase()
-	{	
+	{
+		this.type = null;
 		this.assetName = null;
 		this.request = null;
 		this.onLoad = null;
@@ -57,7 +74,9 @@ protected abstract class AssetOperationBase
 	/// </summary>
 	public T GetAsset<T>() where T : UnityEngine.Object
 	{
-		return (this.GetStatus() == Status.isLoaded) ? (T)this.request.asset : null;
+		Debug.AssertFormat(this.GetStatus() == Status.isLoaded, "読み込みが完了していません。{0}:{1}", this.GetType(), this.assetName);
+		Debug.AssertFormat(this.request.asset != null, "{0}は{1}型のアセットではありません。", this.assetName, typeof(T));
+		return (T)this.request.asset;
 	}
 
 	/// <summary>
@@ -65,7 +84,9 @@ protected abstract class AssetOperationBase
 	/// </summary>
 	public T[] GetAllAssets<T>() where T : UnityEngine.Object
 	{
-		return (this.GetStatus() == Status.isLoaded) ? Array.ConvertAll(this.request.allAssets, x => x as T) : null;
+		Debug.AssertFormat(this.GetStatus() == Status.isLoaded, "読み込みが完了していません。{0}:{1}", this.GetType(), this.assetName);
+		Debug.AssertFormat(this.request.allAssets.Length > 0, "{0}型のアセットが含まれていません。{1}:{2}", typeof(T), this.GetType(), this.assetName);
+		return Array.ConvertAll(this.request.allAssets, x => x as T);
 	}
 
 	/// <summary>
@@ -112,6 +133,47 @@ protected abstract class AssetOperationBase
 	/// AssetBundleRequestの作成
 	/// </summary>
 	protected abstract bool CreateAssetBundleRequest(AssetBundle assetBundle, out AssetBundleRequest request);
+
+#if UNITY_EDITOR
+	#region InspectorGUI
+	/// <summary>
+	/// InspectorGUI：折り畳み表示用
+	/// </summary>
+	/// <remarks>Editor Only</remarks>
+	protected bool foldout = false;
+
+	/// <summary>
+	/// InspectorGUI描画
+	/// </summary>
+	/// <remarks>Editor Only</remarks>
+	public void OnInspectorGUI(int index)
+	{
+		GUILayout.BeginHorizontal();
+		{
+			string typeName = this.GetType().Name.Replace("`1", null) + string.Format("<{0}>", this.type.Name);
+			this.foldout = EditorGUILayout.Foldout(this.foldout, string.Format("{0}:{1}", index, typeName));
+			EditorGUILayout.EnumPopup(this.GetStatus(), GUILayout.Width(120));
+		}
+		GUILayout.EndHorizontal();
+
+		if (this.foldout)
+		{
+			if (this.GetStatus() == Status.isLoaded)
+			{
+				EditorGUILayout.TextField(this.assetName);
+				foreach (var asset in this.request.allAssets)
+				{
+					EditorGUILayout.TextField(asset.GetType().Name, asset.name);
+				}
+			}
+			else
+			{
+				EditorGUILayout.LabelField("Not Loaded.");
+			}
+		}
+	}
+	#endregion
+#endif
 }
 
 /// <summary>
@@ -123,8 +185,8 @@ protected class AssetOperation<T> : AssetOperationBase where T : UnityEngine.Obj
 	/// construct
 	/// </summary>
 	public AssetOperation(string assetName, Action<T> onLoad)
+		: base(assetName, typeof(T))
 	{
-		this.assetName = assetName;
 		this.AddCallBack(onLoad);
 	}
 
@@ -156,8 +218,8 @@ protected class AllAssetsOperation<T> : AssetOperationBase where T : UnityEngine
 	/// construct
 	/// </summary>
 	public AllAssetsOperation(Action<T[]> onLoad)
+		: base(null, typeof(T))
 	{
-		this.assetName = null;
 		this.AddCallBack(onLoad);
 	}
 
@@ -180,8 +242,8 @@ protected class SubAssetsOperation<T> : AssetOperationBase where T : UnityEngine
 	/// construct
 	/// </summary>
 	public SubAssetsOperation(string assetName, Action<T[]> onLoad)
+		: base(assetName, typeof(T))
 	{
-		this.assetName = assetName;
 		this.AddCallBack(onLoad);
 	}
 

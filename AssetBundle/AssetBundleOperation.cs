@@ -341,6 +341,11 @@ protected class AssetBundleOperation
 	/// </summary>
 	/// <remarks>Editor Only</remarks>
 	private bool foldout = false;
+	/// <summary>
+	/// InspectorGUI：アセット管理リスト折り畳み表示用
+	/// </summary>
+	/// <remarks>Editor Only</remarks>
+	private bool foldoutAssetOperationList = false;
 
 	/// <summary>
 	/// InspectorGUI描画
@@ -357,6 +362,27 @@ protected class AssetBundleOperation
 			this.isDontUnload = EditorGUILayout.Toggle("Is Don't Unload", this.isDontUnload);
 			EditorGUILayout.DoubleField("LocalCRC", this.localCRC);
 			EditorGUILayout.DoubleField("ServerCRC", this.serverCRC);
+
+			//アセット管理リストの折り畳み表示
+			this.foldoutAssetOperationList = EditorGUILayout.Foldout(this.foldoutAssetOperationList, "AssetOperationList:Count=" + this.assetOperationList.Count);
+			if (this.foldoutAssetOperationList)
+			{
+				if (this.assetOperationList.Count == 0)
+				{
+					EditorGUI.indentLevel++;
+					EditorGUILayout.LabelField("empty");
+				}
+				else
+				{
+					int indentLevel = EditorGUI.indentLevel;
+
+					for (int i = 0, imax = this.assetOperationList.Count; i < imax; i++)
+					{
+						EditorGUI.indentLevel = indentLevel + 1;
+						this.assetOperationList[i].OnInspectorGUI(i);
+					}
+				}
+			}
 		}
 	}
 	#endregion

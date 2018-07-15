@@ -236,17 +236,6 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
-	/// 単体アセット読み込み
-	/// </summary>
-	/// <param name="assetBundleName">アセットバンドル名</param>
-	/// <param name="assetName">読み込むアセット名</param>
-	/// <param name="onLoad">読み込み完了時コールバック</param>
-	public void LoadAsset(string assetBundleName, string assetName, Action<UnityEngine.Object> onLoad = null)
-	{
-		this.LoadAsset<UnityEngine.Object>(assetBundleName, assetName, onLoad);
-	}
-
-	/// <summary>
 	/// 全アセット読み込み
 	/// </summary>
 	/// <param name="assetBundleName">アセットバンドル名</param>
@@ -286,16 +275,6 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//コールバック追加
 			assetOperation.AddCallBack(onLoad);
 		}
-	}
-
-	/// <summary>
-	/// 全アセット読み込み
-	/// </summary>
-	/// <param name="assetBundleName">アセットバンドル名</param>
-	/// <param name="onLoad">読み込み完了時コールバック</param>
-	public void LoadAllAssets(string assetBundleName, Action<UnityEngine.Object[]> onLoad = null)
-	{
-		this.LoadAllAssets<UnityEngine.Object>(assetBundleName, onLoad);
 	}
 
 	/// <summary>
@@ -339,17 +318,6 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//コールバック追加
 			assetOperation.AddCallBack(onLoad);
 		}
-	}
-
-	/// <summary>
-	/// サブアセット読み込み
-	/// </summary>
-	/// <param name="assetBundleName">アセットバンドル名</param>
-	/// <param name="assetName">読み込むアセット名</param>
-	/// <param name="onLoad">読み込み完了時コールバック</param>
-	public void LoadSubAssets(string assetBundleName, string assetName, Action<UnityEngine.Object[]> onLoad = null)
-	{
-		this.LoadSubAssets<UnityEngine.Object>(assetBundleName, assetName, onLoad);
 	}
 
 	/// <summary>

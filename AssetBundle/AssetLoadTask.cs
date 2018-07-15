@@ -20,11 +20,35 @@ public abstract class AssetLoadTaskBase
 	/// <summary>
 	/// アセットバンドル名
 	/// </summary>
-	public string assetBundleName = null;
+	public string assetBundleName { get; private set; }
 	/// <summary>
 	/// アセット名
 	/// </summary>
-	public string assetName = null;
+	public string assetName { get; private set; }
+	/// <summary>
+	/// アセットタイプ
+	/// </summary>
+	public Type assetType { get; private set; }
+
+	/// <summary>
+	/// construct
+	/// </summary>
+	protected AssetLoadTaskBase(string assetBundleName, string assetName, Type assetType)
+	{
+		this.assetBundleName = assetBundleName;
+		this.assetName = assetName;
+		this.assetType = assetType;
+	}
+
+	/// <summary>
+	/// destruct
+	/// </summary>
+	~AssetLoadTaskBase()
+	{
+		this.assetBundleName = null;
+		this.assetName = null;
+		this.assetType = null;
+	}
 
 	/// <summary>
 	/// コールバック追加
@@ -55,7 +79,8 @@ public abstract class AssetLoadTaskBase
 	{
 		GUILayout.BeginHorizontal();
 		{
-			this.foldout = EditorGUILayout.Foldout(this.foldout, index + ":" + this.assetBundleName);
+			string typeName = this.GetType().Name.Replace("`1", null) + string.Format("<{0}>", this.assetType.Name);
+			this.foldout = EditorGUILayout.Foldout(this.foldout, string.Format("{0}:{1}", index, typeName));
 			EditorGUILayout.Popup(this.isLoading ? 1 : 0, new string[] { "None", "IsLoading" }, GUILayout.Width(100));
 		}
 		GUILayout.EndHorizontal();
@@ -63,7 +88,8 @@ public abstract class AssetLoadTaskBase
 		if (this.foldout)
 		{
 			EditorGUI.indentLevel++;
-			EditorGUILayout.TextField(this.assetName);
+			EditorGUILayout.TextField("AssetBundleName", this.assetBundleName);
+			EditorGUILayout.TextField("AssetName", this.assetName);
 		}
 	}
 	#endregion
@@ -84,10 +110,17 @@ public class AssetLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Object
 	/// construct
 	/// </summary>
 	public AssetLoadTask(string assetBundleName, string assetName, Action<T> onLoad)
+		: base(assetBundleName, assetName, typeof(T))
 	{
-		this.assetBundleName = assetBundleName;
-		this.assetName = assetName;
 		this.onLoad = onLoad;
+	}
+
+	/// <summary>
+	/// destruct
+	/// </summary>
+	~AssetLoadTask()
+	{
+		this.onLoad = null;
 	}
 
 	/// <summary>
@@ -122,9 +155,17 @@ public class AllAssetsLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Obje
 	/// construct
 	/// </summary>
 	public AllAssetsLoadTask(string assetBundleName, Action<T[]> onLoad)
+		: base(assetBundleName, null, typeof(T))
 	{
-		this.assetBundleName = assetBundleName;
 		this.onLoad = onLoad;
+	}
+
+	/// <summary>
+	/// destruct
+	/// </summary>
+	~AllAssetsLoadTask()
+	{
+		this.onLoad = null;
 	}
 
 	/// <summary>
@@ -159,10 +200,17 @@ public class SubAssetsLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Obje
 	/// construct
 	/// </summary>
 	public SubAssetsLoadTask(string assetBundleName, string assetName, Action<T[]> onLoad)
+		: base(assetBundleName, assetName, typeof(T))
 	{
-		this.assetBundleName = assetBundleName;
-		this.assetName = assetName;
 		this.onLoad = onLoad;
+	}
+
+	/// <summary>
+	/// destruct
+	/// </summary>
+	~SubAssetsLoadTask()
+	{
+		this.onLoad = null;
 	}
 
 	/// <summary>
