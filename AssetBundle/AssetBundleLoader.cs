@@ -39,7 +39,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <summary>
 	/// 読み込みタスクリスト
 	/// </summary>
-	private List<AssetLoadTaskBase> loadTaskList = new List<AssetLoadTaskBase>();
+	protected List<AssetLoadTaskBase> loadTaskList = new List<AssetLoadTaskBase>();
 
 	/// <summary>
 	/// Awake
@@ -170,6 +170,19 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
+	/// リソースリストに存在するアセットバンドルかどうかのチェック
+	/// </summary>
+	private bool CheckContains(string assetBundleName)
+	{
+		if (!this.resourceList.ContainsKey(assetBundleName))
+		{
+			Debug.LogWarningFormat("リソースリストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
+			return false;
+		}
+		return true;
+	}
+
+	/// <summary>
 	/// 単体アセット読み込み
 	/// </summary>
 	/// <param name="assetBundleName">アセットバンドル名</param>
@@ -177,9 +190,8 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <param name="onLoad">読み込み完了時コールバック</param>
 	public void LoadAsset<T>(string assetBundleName, string assetName, Action<T> onLoad = null) where T : UnityEngine.Object
 	{
-		if (!this.resourceList.ContainsKey(assetBundleName))
+		if (!this.CheckContains(assetBundleName))
 		{
-			Debug.LogWarningFormat("リソースリストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
 			onLoad.SafetyInvoke(null);
 			return;
 		}
@@ -231,9 +243,8 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <param name="onLoad">読み込み完了時コールバック</param>
 	public void LoadAllAssets<T>(string assetBundleName, Action<T[]> onLoad = null) where T : UnityEngine.Object
 	{
-		if (!this.resourceList.ContainsKey(assetBundleName))
+		if (!this.CheckContains(assetBundleName))
 		{
-			Debug.LogWarningFormat("リストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
 			onLoad.SafetyInvoke(null);
 			return;
 		}
@@ -285,9 +296,8 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <param name="onLoad">読み込み完了時コールバック</param>
 	public void LoadSubAssets<T>(string assetBundleName, string assetName, Action<T[]> onLoad = null) where T : UnityEngine.Object
 	{
-		if (!this.resourceList.ContainsKey(assetBundleName))
+		if (!this.CheckContains(assetBundleName))
 		{
-			Debug.LogWarningFormat("リストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
 			onLoad.SafetyInvoke(null);
 			return;
 		}
@@ -374,17 +384,25 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
+	/// アセットバンドルのUnloadフラグ設定
+	/// </summary>
+	public void SetAssetBundleDontUnloadFlag(string assetBundleName, bool isDontUnload)
+	{
+		if (this.CheckContains(assetBundleName))
+		{
+			this.resourceList[assetBundleName].isDontUnload = isDontUnload;
+		}
+	}
+
+	/// <summary>
 	/// 指定アセットバンドルの破棄
 	/// </summary>
 	public void UnloadAssetBundle(string assetBundleName)
 	{
-		if (!this.resourceList.ContainsKey(assetBundleName))
+		if (this.CheckContains(assetBundleName))
 		{
-			Debug.LogWarningFormat("リストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
-			return;
+			this.resourceList[assetBundleName].Unload();
 		}
-	
-		this.resourceList[assetBundleName].Unload();
 	}
 
 	/// <summary>
@@ -399,25 +417,25 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
-	/// 指定のアセットバンドルがアンロード可能かどうか
+	/// 指定のアセットバンドルが処理中かどうか
+	/// ※true時にはUnload出来ない
 	/// </summary>
-	public bool IsUnloadable(string assetBundleName)
+	public bool IsBusy(string assetBundleName)
 	{
-		if (!this.resourceList.ContainsKey(assetBundleName))
+		if (this.CheckContains(assetBundleName))
 		{
-			Debug.LogWarningFormat("リストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
-			return false;
+			return this.resourceList[assetBundleName].IsBusy();
 		}
-
-		return this.resourceList[assetBundleName].IsUnloadable();
+		return false;
 	}
 
 	/// <summary>
-	/// 全アセットバンドルのアンロードが可能かどうか
+	/// 処理中のアセットバンドルがあるかどうか
+	/// ※true時にはUnload出来ないものがある
 	/// </summary>
-	public bool IsUnloadableAll()
+	public bool IsBusy()
 	{
-		return !this.resourceList.Values.Any(x => !x.IsUnloadable());
+		return this.resourceList.Values.Any(x => x.IsBusy());
 	}
 
 	/// <summary>
@@ -471,6 +489,14 @@ public partial class AssetBundleLoader : MonoBehaviour
 	{
 		this.AddTask(task);
 		this.StartTask();
+	}
+
+	/// <summary>
+	/// 積んである読み込みタスクを消す
+	/// </summary>
+	public void ClearTask()
+	{
+		this.loadTaskList.Clear();
 	}
 
 #if UNITY_EDITOR
@@ -547,7 +573,8 @@ public partial class AssetBundleLoader : MonoBehaviour
 				foreach (var data in loadedAssetBundles)
 				{
 					EditorGUI.indentLevel = 1;
-					EditorGUILayout.TextField(data.name);
+					data.isDontUnload = EditorGUILayout.ToggleLeft(data.name, data.isDontUnload, EditorStyles.textField);
+
 				}
 			}
 		}

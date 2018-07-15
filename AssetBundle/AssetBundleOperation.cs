@@ -48,6 +48,10 @@ protected class AssetBundleOperation
 	/// サーバーのCRC値
 	/// </sumamry>
 	private uint serverCRC = 0;
+	/// <sumamry>
+	/// Unload可能かどうか
+	/// </summary>
+	public bool isDontUnload = false;
 	/// <summary>
 	/// ダウンローダー
 	/// </summary>
@@ -211,6 +215,8 @@ protected class AssetBundleOperation
 	/// </summary>
 	public void Unload()
 	{
+		if (isDontUnload) return;
+
 		var status = this.GetStatus();
 
 		switch (status)
@@ -275,26 +281,24 @@ protected class AssetBundleOperation
 	}
 
 	/// <summary>
-	/// アンロード可能かどうか
+	/// 処理中かどうか
+	/// ※true時にはUnload出来ない
 	/// </summary>
-	public bool IsUnloadable()
+	public bool IsBusy()
 	{
 		var status = this.GetStatus();
 
 		if (status == Status.isLoading)
 		{
-			//読み込み中はアンロード不可
-			return false;
+			return true;
 		}
 		else if (status == Status.isLoaded)
 		{
-			//読み込み中のアセットがある時はアンロード不可
-			return !this.assetOperationList.Exists(x => x.GetStatus() == AssetOperationBase.Status.isLoading);
+			return this.assetOperationList.Exists(x => x.GetStatus() == AssetOperationBase.Status.isLoading);
 		}
 		else
 		{
-			//アンロード可
-			return true;
+			return false;
 		}
 	}
 
@@ -334,6 +338,7 @@ protected class AssetBundleOperation
 		{
 			EditorGUI.indentLevel++;
 			EditorGUILayout.EnumPopup("Status", this.GetStatus());
+			this.isDontUnload = EditorGUILayout.Toggle("Is Don't Unload", this.isDontUnload);
 			EditorGUILayout.DoubleField("LocalCRC", this.localCRC);
 			EditorGUILayout.DoubleField("ServerCRC", this.serverCRC);
 		}
