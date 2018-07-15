@@ -39,7 +39,7 @@ protected class AssetBundleOperation
 	/// <summary>
 	/// ローカルのアセットバンドルファイルパス
 	/// </summary>
-	private string path = null;
+	public string path { get; private set; }
 	/// <summary>
 	/// ローカルのCRC値
 	/// </summary>
@@ -94,6 +94,14 @@ protected class AssetBundleOperation
 	}
 
 	/// <summary>
+	/// CRC値の更新
+	/// </summary>
+	public void UpdateCRC()
+	{
+		this.localCRC = this.serverCRC;
+	}
+
+	/// <summary>
 	/// ローカルのバイナリデータへの書き込み
 	/// </summary>
 	public void Save(BinaryWriter writer)
@@ -138,7 +146,7 @@ protected class AssetBundleOperation
 	/// <summary>
 	/// アセットバンドルのダウンロード
 	/// </summary>
-	public void DownloadAssetBundle(MonoBehaviour downloader, string serverAssetBundleDirectoryUrl, Action onFinished)
+	public void DownloadAssetBundle(MonoBehaviour downloader, string serverAssetBundleDirectoryUrl, Action<byte[]> onFinished)
 	{
 		this.downloader = downloader;
 		this.downloadCoroutine = downloader.StartCoroutine(this.DownloadAssetBundle(serverAssetBundleDirectoryUrl, onFinished));
@@ -147,7 +155,7 @@ protected class AssetBundleOperation
 	/// <summary>
 	/// アセットバンドルのダウンロード
 	/// </summary>
-	private IEnumerator DownloadAssetBundle(string serverAssetBundleDirectoryUrl, Action onFinished)
+	private IEnumerator DownloadAssetBundle(string serverAssetBundleDirectoryUrl, Action<byte[]> onFinished)
 	{
 		//ダウンロード開始
 		using (var www = new WWW(serverAssetBundleDirectoryUrl + "/" + this.name))
@@ -172,14 +180,7 @@ protected class AssetBundleOperation
 			//ダウンロード成功
 			else
 			{
-				//ダウンロードしたアセットバンドルを保存するディレクトリを作成
-				Directory.CreateDirectory(Path.GetDirectoryName(this.path));
-				//ダウンロードしたアセットバンドルを保存
-				File.WriteAllBytes(this.path, www.bytes);
-				//ダウンロードしたのでCRC値を更新
-				this.localCRC = this.serverCRC;
-				//コールバック
-				onFinished();
+				onFinished(www.bytes);
 			}
 		}
 	}
@@ -187,10 +188,25 @@ protected class AssetBundleOperation
 	/// <summary>
 	/// アセットバンドルの読み込み
 	/// </summary>
-	public void LoadAssetBundle(Action onFinished)
+	public void LoadAssetBundleFromFile(Action onFinished)
 	{
-		//ローカルのファイルからアセットバンドルを読み込む
+		//ローカルファイルからアセットバンドルを読み込む
 		this.request = AssetBundle.LoadFromFileAsync(this.path);
+		//読み込み完了時処理
+		this.request.completed += (op) =>
+		{
+			//コールバック実行
+			onFinished();
+		};
+	}
+
+	/// <summary>
+	/// アセットバンドルの読み込み
+	/// </summary>
+	public void LoadAssetBundleFromMemory(byte[] bytes, Action onFinished)
+	{
+		//メモリからアセットバンドルを読み込む
+		this.request = AssetBundle.LoadFromMemoryAsync(bytes);
 		//読み込み完了時処理
 		this.request.completed += (op) =>
 		{

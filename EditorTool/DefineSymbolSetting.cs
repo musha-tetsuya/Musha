@@ -20,6 +20,7 @@ public partial class DefineSymbolSetting : EditorWindow
 	private Dictionary<string, bool> symbolList = new Dictionary<string, bool>
 	{
 		{ "STREAMINGASSETS_SERVER", false },
+		{ "DONT_CACHE_ASSETBUNDLE", false },
 	};
 
 	/// <summary>

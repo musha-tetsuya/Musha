@@ -159,10 +159,10 @@ public partial class AssetBundleLoader : MonoBehaviour
 						}
 					}
 				}
-
+#if !DONT_CACHE_ASSETBUNDLE
 				//更新内容を保存
 				this.SaveResourceList();
-
+#endif
 				//コールバック実行
 				onFinished.SafetyInvoke();
 			}
@@ -355,10 +355,26 @@ public partial class AssetBundleLoader : MonoBehaviour
 		case AssetBundleOperation.Status.isNeedDownload:
 		{
 			//ダウンロード開始
-			data.DownloadAssetBundle(this, this.serverAssetBundleDirectoryUrl, () =>
+			data.DownloadAssetBundle(this, this.serverAssetBundleDirectoryUrl, (bytes) =>
 			{
+#if DONT_CACHE_ASSETBUNDLE
+				//ダウンロードしたアセットバンドルを読み込む
+				data.LoadAssetBundleFromMemory(bytes, () =>
+				{
+					this.UpdateAssetBundleOperation(data);
+				});
+#else 
+				//ダウンロードしたアセットバンドルを保存するディレクトリを作成
+				Directory.CreateDirectory(Path.GetDirectoryName(data.path));
+				//ダウンロードしたアセットバンドルを保存
+				File.WriteAllBytes(data.path, bytes);
+				//ダウンロードしたのでCRC値を更新
+				data.UpdateCRC();
+				//更新内容を保存
 				this.SaveResourceList();
+				//次の処理へ
 				this.UpdateAssetBundleOperation(data);
+#endif
 			});
 		}
 		break;
@@ -366,8 +382,8 @@ public partial class AssetBundleLoader : MonoBehaviour
 		//ダウンロード済み
 		case AssetBundleOperation.Status.isDownloaded:
 		{
-			//読み込み開始
-			data.LoadAssetBundle(() =>
+			//ローカルファイルからアセットバンドルを読み込む
+			data.LoadAssetBundleFromFile(() =>
 			{
 				this.UpdateAssetBundleOperation(data);
 			});
