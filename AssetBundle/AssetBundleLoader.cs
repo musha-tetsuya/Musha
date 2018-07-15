@@ -17,6 +17,10 @@ namespace MushaEngine {
 public partial class AssetBundleLoader : MonoBehaviour
 {
 	/// <summary>
+	/// アセットバンドルをキャッシュしないフラグ
+	/// </summary>
+	[SerializeField]public bool dontCacheAssetBundle = false;
+	/// <summary>
 	/// 読み込みタスクの最大並列処理数
 	/// </summary>
 	[SerializeField]public int maxTaskProcessingSize = 8;
@@ -68,8 +72,11 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// </summary>
 	public void Setup(Action onFinished)
 	{
-		//ローカルのリソースリスト読み込み
-		this.LoadResourceList();
+		if (!this.dontCacheAssetBundle)
+		{
+			//ローカルのリソースリスト読み込み
+			this.LoadResourceList();
+		}
 
 		//サーバーから最新のリソースリストを取得して更新
 		StartCoroutine(this.DownloadResourceList(onFinished));
@@ -159,10 +166,13 @@ public partial class AssetBundleLoader : MonoBehaviour
 						}
 					}
 				}
-#if !DONT_CACHE_ASSETBUNDLE
-				//更新内容を保存
-				this.SaveResourceList();
-#endif
+
+				if (!this.dontCacheAssetBundle)
+				{
+					//更新内容を保存
+					this.SaveResourceList();
+				}
+
 				//コールバック実行
 				onFinished.SafetyInvoke();
 			}
@@ -357,24 +367,29 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//ダウンロード開始
 			data.DownloadAssetBundle(this, this.serverAssetBundleDirectoryUrl, (bytes) =>
 			{
-#if DONT_CACHE_ASSETBUNDLE
-				//ダウンロードしたアセットバンドルを読み込む
-				data.LoadAssetBundleFromMemory(bytes, () =>
+				//ダウンロードしたアセットバンドルをローカルに保存しない場合
+				if (this.dontCacheAssetBundle)
 				{
+					//メモリからアセットバンドルを読み込む
+					data.LoadAssetBundleFromMemory(bytes, () =>
+					{
+						this.UpdateAssetBundleOperation(data);
+					});
+				}
+				//ダウンロードしたアセットバンドルをローカルに保存する場合
+				else
+				{
+					//保存先ディレクトリを作成
+					Directory.CreateDirectory(Path.GetDirectoryName(data.path));
+					//アセットバンドルを保存
+					File.WriteAllBytes(data.path, bytes);
+					//ダウンロードしたのでCRC値を更新
+					data.UpdateCRC();
+					//更新内容を保存
+					this.SaveResourceList();
+					//次の処理へ
 					this.UpdateAssetBundleOperation(data);
-				});
-#else 
-				//ダウンロードしたアセットバンドルを保存するディレクトリを作成
-				Directory.CreateDirectory(Path.GetDirectoryName(data.path));
-				//ダウンロードしたアセットバンドルを保存
-				File.WriteAllBytes(data.path, bytes);
-				//ダウンロードしたのでCRC値を更新
-				data.UpdateCRC();
-				//更新内容を保存
-				this.SaveResourceList();
-				//次の処理へ
-				this.UpdateAssetBundleOperation(data);
-#endif
+				}
 			});
 		}
 		break;
