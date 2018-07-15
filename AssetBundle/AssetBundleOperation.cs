@@ -317,14 +317,16 @@ protected class AssetBundleOperation
 #if UNITY_EDITOR
 	#region インスペクター表示
 	/// <summary>
-	/// インスペクターGUI：折り畳み表示用
+	/// InspectorGUI：折り畳み表示用
 	/// </summary>
+	/// <remarks>Editor Only</remarks>
 	private bool foldout = false;
 
 	/// <summary>
-	/// インスペクターGUI描画
+	/// InspectorGUI描画
 	/// </summary>
-	public void DrawInspectorGUI()
+	/// <remarks>Editor Only</remarks>
+	public void OnInspectorGUI()
 	{
 		//折り畳み表示
 		this.foldout = EditorGUILayout.Foldout(this.foldout, this.name);

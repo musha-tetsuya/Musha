@@ -17,9 +17,9 @@ namespace MushaEngine {
 public partial class AssetBundleLoader : MonoBehaviour
 {
 	/// <summary>
-	/// リソースリスト
+	/// 読み込みタスクの最大並列処理数
 	/// </summary>
-	protected Dictionary<string, AssetBundleOperation> resourceList = new Dictionary<string, AssetBundleOperation>();
+	[SerializeField]public int maxTaskProcessingSize = 8;
 	/// <summary>
 	/// サーバーのアセットバンドルディレクトリURL
 	/// </summary>
@@ -32,6 +32,14 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// サーバーのリソースリストURL
 	/// </summary>
 	protected string serverResourceListUrl = null;
+	/// <summary>
+	/// リソースリスト
+	/// </summary>
+	protected Dictionary<string, AssetBundleOperation> resourceList = new Dictionary<string, AssetBundleOperation>();
+	/// <summary>
+	/// 読み込みタスクリスト
+	/// </summary>
+	private List<AssetLoadTaskBase> loadTaskList = new List<AssetLoadTaskBase>();
 
 	/// <summary>
 	/// Awake
@@ -325,6 +333,47 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
+	/// アセットバンドルの状態に応じた処理
+	/// </summary>
+	private void UpdateAssetBundleOperation(AssetBundleOperation data)
+	{
+		var status = data.GetStatus();
+
+		switch (status)
+		{
+		//ダウンロードが必要
+		case AssetBundleOperation.Status.isNeedDownload:
+		{
+			//ダウンロード開始
+			data.DownloadAssetBundle(this, this.serverAssetBundleDirectoryUrl, () =>
+			{
+				this.SaveResourceList();
+				this.UpdateAssetBundleOperation(data);
+			});
+		}
+		break;
+
+		//ダウンロード済み
+		case AssetBundleOperation.Status.isDownloaded:
+		{
+			//読み込み開始
+			data.LoadAssetBundle(() =>
+			{
+				this.UpdateAssetBundleOperation(data);
+			});
+		}
+		break;
+
+		//読み込み済み
+		case AssetBundleOperation.Status.isLoaded:
+		{
+			data.LoadAsset();
+		}
+		break;
+		}
+	}
+
+	/// <summary>
 	/// 指定アセットバンドルの破棄
 	/// </summary>
 	public void UnloadAssetBundle(string assetBundleName)
@@ -372,79 +421,111 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
-	/// アセットバンドルの状態に応じた処理
+	/// 読み込みタスク追加
 	/// </summary>
-	private void UpdateAssetBundleOperation(AssetBundleOperation data)
+	public void AddTask(AssetLoadTaskBase task)
 	{
-		var status = data.GetStatus();
-
-		switch (status)
+		if (!this.loadTaskList.Contains(task))
 		{
-		//ダウンロードが必要
-		case AssetBundleOperation.Status.isNeedDownload:
-		{
-			//ダウンロード開始
-			data.DownloadAssetBundle(this, this.serverAssetBundleDirectoryUrl, () =>
+			//読み込み完了時コールバックの追加
+			task.AddCallBack(() =>
 			{
-				this.SaveResourceList();
-				this.UpdateAssetBundleOperation(data);
+				//自身をリストから除去
+				this.loadTaskList.Remove(task);
+				//残っているタスクの処理を開始
+				this.StartTask();
 			});
-		}
-		break;
 
-		//ダウンロード済み
-		case AssetBundleOperation.Status.isDownloaded:
+			//リストに追加
+			this.loadTaskList.Add(task);
+		}
+	}
+
+	/// <summary>
+	/// 読み込みタスクの処理を開始する
+	/// </summary>
+	public void StartTask()
+	{
+		//処理中タスク数が最大数未満かどうか
+		if (this.loadTaskList.Count(x => x.isLoading) < this.maxTaskProcessingSize)
 		{
-			//読み込み開始
-			data.LoadAssetBundle(() =>
+			for (int i = 0, imax = this.loadTaskList.Count; i < imax; i++)
 			{
-				this.UpdateAssetBundleOperation(data);
-			});
+				//処理前のタスクを検索
+				if (!this.loadTaskList[i].isLoading)
+				{
+					//処理を開始
+					this.loadTaskList[i].Load(this);
+					//まだ余裕があるなら他のタスクの処理も開始する
+					this.StartTask();
+					break;
+				}
+			}
 		}
-		break;
+	}
 
-		//読み込み済み
-		case AssetBundleOperation.Status.isLoaded:
-		{
-			data.LoadAsset();
-		}
-		break;
-		}
+	/// <summary>
+	/// 読み込みタスクの追加と同時に処理の開始
+	/// </summary>
+	public void AddAndStartTask(AssetLoadTaskBase task)
+	{
+		this.AddTask(task);
+		this.StartTask();
 	}
 
 #if UNITY_EDITOR
 	#region インスペクター表示
 	/// <summary>
-	/// インスペクターGUI：リソースリスト折り畳み表示用
+	/// InspectorGUI：リソースリスト折り畳み表示用
 	/// </summary>
+	/// <remarks>Editor Only</remarks>
 	private bool foldoutResourceList = false;
 	/// <summary>
-	/// インスペクターGUI：読み込み済みアセットバンドル折り畳み表示用
+	/// InspectorGUI：読み込み済みアセットバンドル折り畳み表示用
 	/// </summary>
+	/// <remarks>Editor Only</remarks>
 	private bool foldoutLoadedAssetBundles = false;
-	
 	/// <summary>
-	/// インスペクターGUI描画
+	/// InspectorGUI：読み込みタスク折り畳み表示用
 	/// </summary>
+	/// <remarks>Editor Only</remarks>
+	private bool foldoutLoadTaskList = false;
+
+	/// <summary>
+	/// InspectorGUI描画
+	/// </summary>
+	/// <remarks>Editor Only</remarks>
 	public void OnInspectorGUI()
 	{
 		EditorGUI.indentLevel = 0;
 
+		//サーバーのアセットバンドルディレクトリURL表示
+		EditorGUILayout.LabelField("ServerAssetBundleDirectoryUrl");
+		EditorGUILayout.TextField(this.serverAssetBundleDirectoryUrl);
+
+		//ローカルのリソースリストパス
+		EditorGUILayout.LabelField("LocalResourceListPath");
+		EditorGUILayout.TextField(this.localResourceListPath);
+
+		//サーバーのリソースリストURL
+		EditorGUILayout.LabelField("ServerResourceListUrl");
+		EditorGUILayout.TextField(this.serverResourceListUrl);
+
 		//リソースリスト一覧表示
-		this.foldoutResourceList = EditorGUILayout.Foldout(this.foldoutResourceList, "ResourceList : Count=" + this.resourceList.Count);
+		this.foldoutResourceList = EditorGUILayout.Foldout(this.foldoutResourceList, "ResourceList:Count=" + this.resourceList.Count);
 		if (this.foldoutResourceList)
 		{
 			if (this.resourceList.Count == 0)
 			{
 				EditorGUI.indentLevel = 1;
-				EditorGUILayout.LabelField("Empty");
+				EditorGUILayout.LabelField("empty");
 			}
 			else
 			{
 				foreach (var data in this.resourceList.Values)
 				{
 					EditorGUI.indentLevel = 1;
-					data.DrawInspectorGUI();
+					data.OnInspectorGUI();
 				}
 			}
 		}
@@ -459,7 +540,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 			if (loadedAssetBundles.Count() == 0)
 			{
 				EditorGUI.indentLevel = 1;
-				EditorGUILayout.TextField(null);
+				EditorGUILayout.LabelField("empty");
 			}
 			else
 			{
@@ -467,6 +548,27 @@ public partial class AssetBundleLoader : MonoBehaviour
 				{
 					EditorGUI.indentLevel = 1;
 					EditorGUILayout.TextField(data.name);
+				}
+			}
+		}
+
+		EditorGUI.indentLevel = 0;
+
+		//読み込みタスク一覧表示
+		this.foldoutLoadTaskList = EditorGUILayout.Foldout(this.foldoutLoadTaskList, "AssetLoadTaskList:Count=" + this.loadTaskList.Count);
+		if (this.foldoutLoadTaskList)
+		{
+			if (this.loadTaskList.Count == 0)
+			{
+				EditorGUI.indentLevel = 1;
+				EditorGUILayout.LabelField("empty");
+			}
+			else
+			{
+				for (int i = 0, imax = this.loadTaskList.Count; i < imax; i++)
+				{
+					EditorGUI.indentLevel = 1;
+					this.loadTaskList[i].OnInspectorGUI(i);
 				}
 			}
 		}
@@ -492,9 +594,11 @@ public class AssetBundleLoaderInspector : Editor
 	/// </summary>
 	public override void OnInspectorGUI()
 	{
-		DrawDefaultInspector();
+		base.OnInspectorGUI();
 
 		(this.target as MushaEngine.AssetBundleLoader).OnInspectorGUI();
+
+		this.Repaint();
 	}
 }
 
