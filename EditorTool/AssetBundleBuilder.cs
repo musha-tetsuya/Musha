@@ -21,6 +21,10 @@ public class AssetBundleBuilder : EditorWindow
 	/// </summary>
 	private IEnumerable<UnityEngine.Object> addNameTargets = null;
 	/// <summary>
+	/// AssetBundle保存先
+	/// </summary>
+	private EditorPrefsString destPath = null;
+	/// <summary>
 	/// AssetBundle出力先
 	/// </summary>
 	private string destSubPath = null;
@@ -41,29 +45,6 @@ public class AssetBundleBuilder : EditorWindow
 #elif UNITY_STANDALONE_OSX
 		BuildTarget.StandaloneOSX;
 #endif
-	/// <summary>
-	/// AssetBundle保存先のEditorPrefsキー
-	/// </summary>
-	private string destPathKey
-	{
-		get { return GetType().FullName + ".destPath"; }
-	}
-	/// <summary>
-	/// AssetBundle保存先
-	/// </summary>
-	private string destPath
-	{
-		get
-		{
-			return EditorPrefs.HasKey(this.destPathKey) && Directory.Exists(EditorPrefs.GetString(this.destPathKey))
-				 ? EditorPrefs.GetString(this.destPathKey)
-				 : (this.destPath = Application.dataPath);
-		}
-		set
-		{
-			EditorPrefs.SetString(this.destPathKey, value);
-		}
-	}
 
 	/// <summary>
 	/// GUIウィンドウを開く
@@ -79,7 +60,8 @@ public class AssetBundleBuilder : EditorWindow
 	/// </summary>
 	private void OnEnable()
 	{
-		this.destSubPath = this.destPath + "/" + Define.assetBundleDirectoryName;
+		this.destPath = new EditorPrefsString(GetType().FullName + ".destPath", Application.dataPath, Directory.Exists);
+		this.destSubPath = this.destPath.val + "/" + Define.assetBundleDirectoryName;
 		this.OnSelectionChange();
 	}
 
@@ -168,11 +150,11 @@ public class AssetBundleBuilder : EditorWindow
 		{
 			if (GUILayout.Button("変更", GUILayout.ExpandWidth(false)))
 			{
-				string path = EditorUtility.SaveFolderPanel("AssetBundle保存先の選択", this.destPath, "");
+				string path = EditorUtility.SaveFolderPanel("AssetBundle保存先の選択", this.destPath.val, "");
 				if (!string.IsNullOrEmpty(path))
 				{
 					//保存先決定
-					this.destPath = path;
+					this.destPath.val = path;
 					this.destSubPath = this.destPath + "/" + Define.assetBundleDirectoryName;
 				}
 			}

@@ -64,74 +64,17 @@ public class MasterDataMaker : EditorWindow
 	/// </summary>
 	private Vector2 scrollPosition = Vector2.zero;
 	/// <summary>
-	/// CSVディレクトリパスのEditorPrefsキー
-	/// </summary>
-	private string sourceCsvDirectoryPathKey
-	{
-		get { return GetType().FullName + ".sourceCsvDirectoryPath"; }
-	}
-	/// <summary>
 	/// CSVディレクトリパス
 	/// </summary>
-	private string sourceCsvDirectoryPath
-	{
-		get
-		{
-			return EditorPrefs.HasKey(this.sourceCsvDirectoryPathKey) && Directory.Exists(EditorPrefs.GetString(this.sourceCsvDirectoryPathKey))
-				 ? EditorPrefs.GetString(this.sourceCsvDirectoryPathKey)
-				 : (this.sourceCsvDirectoryPath = Application.dataPath);
-		}
-		set
-		{
-			EditorPrefs.SetString(this.sourceCsvDirectoryPathKey, value);
-		}
-	}
-	/// <summary>
-	/// CSファイル保存先のEditorPrefsキー
-	/// </summary>
-	private string destCsDirectoryPathKey
-	{
-		get { return GetType().FullName + ".destCsDirectoryPath"; }
-	}
+	private EditorPrefsString sourceCsvDirectoryPath = null;
 	/// <summary>
 	/// CSファイル保存先
 	/// </summary>
-	private string destCsDirectoryPath
-	{
-		get
-		{
-			return EditorPrefs.HasKey(this.destCsDirectoryPathKey) && Directory.Exists(EditorPrefs.GetString(this.destCsDirectoryPathKey))
-				 ? EditorPrefs.GetString(this.destCsDirectoryPathKey)
-				 : (this.destCsDirectoryPath = Application.dataPath);
-		}
-		set
-		{
-			EditorPrefs.SetString(this.destCsDirectoryPathKey, value);
-		}
-	}
-	/// <summary>
-	/// ScriptableObject保存先のEditorPrefsキー
-	/// </summary>
-	private string destScriptableObjectDirectoryPathKey
-	{
-		get { return GetType().FullName + ".destScriptableObjectDirectoryPath"; }
-	}
+	private EditorPrefsString destCsDirectoryPath = null;
 	/// <summary>
 	/// ScriptableObject保存先
 	/// </summary>
-	private string destScriptableObjectDirectoryPath
-	{
-		get
-		{
-			return EditorPrefs.HasKey(this.destScriptableObjectDirectoryPathKey) && Directory.Exists(Application.dataPath + EditorPrefs.GetString(this.destScriptableObjectDirectoryPathKey))
-				 ? EditorPrefs.GetString(this.destScriptableObjectDirectoryPathKey)
-				 : (this.destCsDirectoryPath = null);
-		}
-		set
-		{
-			EditorPrefs.SetString(this.destScriptableObjectDirectoryPathKey, value);
-		}
-	}
+	private EditorPrefsString destScriptableObjectDirectoryPath = null;
 
 	/// <summary>
 	/// ウィンドウを開く
@@ -140,6 +83,16 @@ public class MasterDataMaker : EditorWindow
 	private static void Open()
 	{
 		EditorWindow.GetWindow<MasterDataMaker>();
+	}
+
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	private void OnEnable()
+	{
+		this.sourceCsvDirectoryPath = new EditorPrefsString(GetType().FullName + ".sourceCsvDirectoryPath", Application.dataPath, Directory.Exists);
+		this.destCsDirectoryPath = new EditorPrefsString(GetType().FullName + ".destCsDirectoryPath", Application.dataPath);
+		this.destScriptableObjectDirectoryPath = new EditorPrefsString(GetType().FullName + ".destScriptableObjectDirectoryPath", null, (val) => Directory.Exists(Application.dataPath + val));
 	}
 
 	/// <summary>
@@ -154,11 +107,11 @@ public class MasterDataMaker : EditorWindow
 			//CSVファイル追加ボタン
 			if (GUILayout.Button("ファイル追加", GUILayout.Width(150)))
 			{
-				string path = EditorUtility.OpenFilePanelWithFilters("CSVファイルの選択", this.sourceCsvDirectoryPath, new string[] { "CSV files", "csv" });
+				string path = EditorUtility.OpenFilePanelWithFilters("CSVファイルの選択", this.sourceCsvDirectoryPath.val, new string[] { "CSV files", "csv" });
 				if (!string.IsNullOrEmpty(path))
 				{
 					//デフォルトCSVディレクトリパス変更
-					this.sourceCsvDirectoryPath = Path.GetDirectoryName(path);
+					this.sourceCsvDirectoryPath.val = Path.GetDirectoryName(path);
 					//変換対象CSV追加
 					if (!this.targetCsvPathList.Contains(path))
 					{
@@ -170,11 +123,11 @@ public class MasterDataMaker : EditorWindow
 			//CSVフォルダ追加ボタン
 			if (GUILayout.Button("フォルダ追加", GUILayout.Width(150)))
 			{
-				string path = EditorUtility.OpenFolderPanel("CSVフォルダの選択", this.sourceCsvDirectoryPath, "");
+				string path = EditorUtility.OpenFolderPanel("CSVフォルダの選択", this.sourceCsvDirectoryPath.val, "");
 				if (!string.IsNullOrEmpty(path))
 				{
 					//デフォルトCSVディレクトリパス変更
-					this.sourceCsvDirectoryPath = path;
+					this.sourceCsvDirectoryPath.val = path;
 					//ディレクトリ内CSVファイルを変換対象に追加
 					this.targetCsvPathList = this.targetCsvPathList
 						.Union(Directory.GetFiles(path, "*.csv", SearchOption.AllDirectories).Select(x => x.Replace("\\", "/")))
@@ -219,11 +172,11 @@ public class MasterDataMaker : EditorWindow
 		{
 			if (GUILayout.Button("CSファイルに変換", GUILayout.Width(150)))
 			{
-				string path = EditorUtility.SaveFolderPanel("CSファイル保存先選択", this.destCsDirectoryPath, "");
+				string path = EditorUtility.SaveFolderPanel("CSファイル保存先選択", this.destCsDirectoryPath.val, "");
 				if (!string.IsNullOrEmpty(path))
 				{
 					//保存先決定
-					this.destCsDirectoryPath = path;
+					this.destCsDirectoryPath.val = path;
 					//CSファイルに変換
 					this.CsvToCs();
 				}
@@ -231,7 +184,7 @@ public class MasterDataMaker : EditorWindow
 
 			if (GUILayout.Button("ScriptableObjectに変換", GUILayout.Width(150)))
 			{
-				string path = EditorUtility.SaveFolderPanel("ScriptableObject保存先選択", Application.dataPath + this.destScriptableObjectDirectoryPath, "");
+				string path = EditorUtility.SaveFolderPanel("ScriptableObject保存先選択", Application.dataPath + this.destScriptableObjectDirectoryPath.val, "");
 				if (!string.IsNullOrEmpty(path))
 				{
 					if (!path.Contains(Application.dataPath))
@@ -241,7 +194,7 @@ public class MasterDataMaker : EditorWindow
 					else
 					{
 						//保存先決定
-						this.destScriptableObjectDirectoryPath = path.Replace(Application.dataPath, "");
+						this.destScriptableObjectDirectoryPath.val = path.Replace(Application.dataPath, "");
 						//ScriptableObjectに変換
 						this.CsvToScriptableObject();
 					}
@@ -261,7 +214,7 @@ public class MasterDataMaker : EditorWindow
 		{
 			//作成するクラス名とCSファイルのパス
 			string className = Path.GetFileNameWithoutExtension(csvPath);
-			string csPath = string.Format("{0}/{1}.cs", this.destCsDirectoryPath, className);
+			string csPath = string.Format("{0}/{1}.cs", this.destCsDirectoryPath.val, className);
 
 			//CSV読み込み＆CSファイル作成
 			using (var reader = new StreamReader(csvPath))
@@ -338,7 +291,7 @@ public class MasterDataMaker : EditorWindow
 					paramList.Add(paramInstance);
 				}
 				//ScriptableObject保存
-				string scriptableObjectPath = string.Format("Assets{0}/{1}.asset", this.destScriptableObjectDirectoryPath, className);
+				string scriptableObjectPath = string.Format("Assets{0}/{1}.asset", this.destScriptableObjectDirectoryPath.val, className);
 				AssetDatabase.CreateAsset(scriptableObject, scriptableObjectPath);
 			}
 		}

@@ -20,11 +20,23 @@ public class AtlasMaker : EditorWindow
 	/// アトラス化対象のテクスチャリスト
 	/// </summary>
 	private List<AtlasParts> atlasPartsList = new List<AtlasParts>();
+	/// <summary>
+	/// アトラス保存先
+	/// </summary>
+	private EditorPrefsString destPath = null;
 
 	[MenuItem("MushaEditor/AtlasMaker")]
 	private static void Open()
 	{
 		GetWindow<AtlasMaker>();
+	}
+
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	private void OnEnable()
+	{
+		this.destPath = new EditorPrefsString(GetType().FullName + ".destPath", "Assets", Directory.Exists);
 	}
 
 	/// <summary>
@@ -39,9 +51,10 @@ public class AtlasMaker : EditorWindow
 				//保存ボタン
 				if (GUILayout.Button("Save", GUILayout.Width(60)))
 				{
-					string path = EditorUtility.SaveFilePanelInProject("Save Atlas", "", "png", "");
+					string path = EditorUtility.SaveFilePanelInProject("Save Atlas", "", "png", "", this.destPath.val);
 					if (!string.IsNullOrEmpty(path))
 					{
+						this.destPath.val = Path.GetDirectoryName(path);
 						Save(path);
 					}
 				}
