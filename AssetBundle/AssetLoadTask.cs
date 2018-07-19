@@ -14,9 +14,15 @@ namespace MushaEngine {
 public abstract class AssetLoadTaskBase
 {
 	/// <summary>
-	/// 読み込み中かどうか
-	/// </sumamry>
-	public bool isLoading { get; private set; }
+	/// 状態
+	/// </summary>
+	public enum Status
+	{
+		None,
+		isLoading,
+		isLoaded,
+	}
+
 	/// <summary>
 	/// アセットバンドル名
 	/// </summary>
@@ -29,6 +35,10 @@ public abstract class AssetLoadTaskBase
 	/// アセットタイプ
 	/// </summary>
 	public Type assetType { get; private set; }
+	/// <summary>
+	/// 状態
+	/// </summary>
+	public Status status { get; private set; }
 
 	/// <summary>
 	/// construct
@@ -38,6 +48,7 @@ public abstract class AssetLoadTaskBase
 		this.assetBundleName = assetBundleName;
 		this.assetName = assetName;
 		this.assetType = assetType;
+		this.AddCallBack(() => this.status = Status.isLoaded);
 	}
 
 	/// <summary>
@@ -60,7 +71,7 @@ public abstract class AssetLoadTaskBase
 	/// </summary>
 	public virtual void Load(AssetBundleLoader loader)
 	{
-		this.isLoading = true;
+		this.status = Status.isLoading;
 	}
 
 #if UNITY_EDITOR
@@ -81,7 +92,7 @@ public abstract class AssetLoadTaskBase
 		{
 			string typeName = this.GetType().Name.Replace("`1", null) + string.Format("<{0}>", this.assetType.Name);
 			this.foldout = EditorGUILayout.Foldout(this.foldout, string.Format("{0}:{1}", index, typeName));
-			EditorGUILayout.Popup(this.isLoading ? 1 : 0, new string[] { "None", "IsLoading" }, GUILayout.Width(100));
+			EditorGUILayout.EnumPopup(this.status, GUILayout.Width(100));
 		}
 		GUILayout.EndHorizontal();
 
@@ -109,10 +120,13 @@ public class AssetLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Object
 	/// <summary>
 	/// construct
 	/// </summary>
-	public AssetLoadTask(string assetBundleName, string assetName, Action<T> onLoad)
+	public AssetLoadTask(string assetBundleName, string assetName, Action<T> onLoad = null)
 		: base(assetBundleName, assetName, typeof(T))
 	{
-		this.onLoad = onLoad;
+		if (onLoad != null)
+		{
+			this.onLoad += onLoad;
+		}
 	}
 
 	/// <summary>
@@ -154,10 +168,13 @@ public class AllAssetsLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Obje
 	/// <summary>
 	/// construct
 	/// </summary>
-	public AllAssetsLoadTask(string assetBundleName, Action<T[]> onLoad)
+	public AllAssetsLoadTask(string assetBundleName, Action<T[]> onLoad = null)
 		: base(assetBundleName, null, typeof(T))
 	{
-		this.onLoad = onLoad;
+		if (onLoad != null)
+		{
+			this.onLoad += onLoad;
+		}
 	}
 
 	/// <summary>
@@ -199,10 +216,13 @@ public class SubAssetsLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Obje
 	/// <summary>
 	/// construct
 	/// </summary>
-	public SubAssetsLoadTask(string assetBundleName, string assetName, Action<T[]> onLoad)
+	public SubAssetsLoadTask(string assetBundleName, string assetName, Action<T[]> onLoad = null)
 		: base(assetBundleName, assetName, typeof(T))
 	{
-		this.onLoad = onLoad;
+		if (onLoad != null)
+		{
+			this.onLoad += onLoad;
+		}
 	}
 
 	/// <summary>

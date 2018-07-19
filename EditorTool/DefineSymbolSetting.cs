@@ -19,6 +19,7 @@ public partial class DefineSymbolSetting : EditorWindow
 	/// </summary>
 	private Dictionary<string, bool> symbolList = new Dictionary<string, bool>
 	{
+		{ "MUSHA_DEBUG", false },
 		{ "STREAMINGASSETS_SERVER", false },
 	};
 

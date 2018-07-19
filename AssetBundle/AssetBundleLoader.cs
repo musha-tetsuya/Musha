@@ -180,19 +180,6 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
-	/// リソースリストに存在するアセットバンドルかどうかのチェック
-	/// </summary>
-	private bool CheckContains(string assetBundleName)
-	{
-		if (!this.resourceList.ContainsKey(assetBundleName))
-		{
-			Debug.LogWarningFormat("リソースリストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
-			return false;
-		}
-		return true;
-	}
-
-	/// <summary>
 	/// 単体アセット読み込み
 	/// </summary>
 	/// <param name="assetBundleName">アセットバンドル名</param>
@@ -200,7 +187,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <param name="onLoad">読み込み完了時コールバック</param>
 	public void LoadAsset<T>(string assetBundleName, string assetName, Action<T> onLoad = null) where T : UnityEngine.Object
 	{
-		if (!this.CheckContains(assetBundleName))
+		if (!this.CheckAssetBundleExists(assetBundleName))
 		{
 			onLoad.SafetyInvoke(null);
 			return;
@@ -242,7 +229,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <param name="onLoad">読み込み完了時コールバック</param>
 	public void LoadAllAssets<T>(string assetBundleName, Action<T[]> onLoad = null) where T : UnityEngine.Object
 	{
-		if (!this.CheckContains(assetBundleName))
+		if (!this.CheckAssetBundleExists(assetBundleName))
 		{
 			onLoad.SafetyInvoke(null);
 			return;
@@ -285,7 +272,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <param name="onLoad">読み込み完了時コールバック</param>
 	public void LoadSubAssets<T>(string assetBundleName, string assetName, Action<T[]> onLoad = null) where T : UnityEngine.Object
 	{
-		if (!this.CheckContains(assetBundleName))
+		if (!this.CheckAssetBundleExists(assetBundleName))
 		{
 			onLoad.SafetyInvoke(null);
 			return;
@@ -383,11 +370,67 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
+	/// 読み込み済み単体アセットの取得
+	/// </summary>
+	/// <param name="assetBundleName">取得したいアセットが含まれているアセットバンドル名</param>
+	/// <param name="assetName">取得したいアセット名</param>
+	public T GetLoadedAsset<T>(string assetBundleName, string assetName) where T : UnityEngine.Object
+	{
+		AssetOperation<T> assetOperation = null;
+
+		if (this.CheckAssetLoaded<AssetOperation<T>>(assetBundleName, assetName, out assetOperation))
+		{
+			return assetOperation.GetAsset<T>();
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	/// <summary>
+	/// 読み込み済み全体アセットの取得
+	/// </summary>
+	/// <param name="assetBundleName">アセットバンドル名</param>
+	public T[] GetLoadedAllAssets<T>(string assetBundleName) where T : UnityEngine.Object
+	{
+		AllAssetsOperation<T> assetOperation = null;
+
+		if (this.CheckAssetLoaded<AllAssetsOperation<T>>(assetBundleName, null, out assetOperation))
+		{
+			return assetOperation.GetAllAssets<T>();
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	/// <summary>
+	/// 読み込み済みサブアセットの取得
+	/// </summary>
+	/// <param name="assetBundleName">取得したいサブアセットが含まれているアセットバンドル名</param>
+	/// <param name="assetName">取得したいサブアセット名</param>
+	public T[] GetLoadedSubAssets<T>(string assetBundleName, string assetName) where T : UnityEngine.Object
+	{
+		SubAssetsOperation<T> assetOperation = null;
+
+		if (this.CheckAssetLoaded<SubAssetsOperation<T>>(assetBundleName, assetName, out assetOperation))
+		{
+			return assetOperation.GetAllAssets<T>();
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	/// <summary>
 	/// アセットバンドルのUnloadフラグ設定
 	/// </summary>
 	public void SetAssetBundleDontUnloadFlag(string assetBundleName, bool isDontUnload)
 	{
-		if (this.CheckContains(assetBundleName))
+		if (this.CheckAssetBundleExists(assetBundleName))
 		{
 			this.resourceList[assetBundleName].isDontUnload = isDontUnload;
 		}
@@ -398,7 +441,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// </summary>
 	public void UnloadAssetBundle(string assetBundleName)
 	{
-		if (this.CheckContains(assetBundleName))
+		if (this.CheckAssetBundleExists(assetBundleName))
 		{
 			this.resourceList[assetBundleName].Unload();
 		}
@@ -421,7 +464,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// </summary>
 	public bool IsBusy(string assetBundleName)
 	{
-		if (this.CheckContains(assetBundleName))
+		if (this.CheckAssetBundleExists(assetBundleName))
 		{
 			return this.resourceList[assetBundleName].IsBusy();
 		}
@@ -464,12 +507,12 @@ public partial class AssetBundleLoader : MonoBehaviour
 	public void StartTask()
 	{
 		//処理中タスク数が最大数未満かどうか
-		if (this.loadTaskList.Count(x => x.isLoading) < this.maxTaskProcessingSize)
+		if (this.loadTaskList.Count(x => x.status == AssetLoadTaskBase.Status.isLoading) < this.maxTaskProcessingSize)
 		{
 			for (int i = 0, imax = this.loadTaskList.Count; i < imax; i++)
 			{
 				//処理前のタスクを検索
-				if (!this.loadTaskList[i].isLoading)
+				if (this.loadTaskList[i].status == AssetLoadTaskBase.Status.None)
 				{
 					//処理を開始
 					this.loadTaskList[i].Load(this);
@@ -491,11 +534,65 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 	/// <summary>
+	/// 積まれている読み込みタスク数
+	/// </summary>
+	public int GetTaskCount()
+	{
+		return this.loadTaskList.Count;
+	}
+
+	/// <summary>
 	/// 積んである読み込みタスクを消す
 	/// </summary>
 	public void ClearTask()
 	{
 		this.loadTaskList.Clear();
+	}
+
+	/// <summary>
+	/// リソースリストに存在するアセットバンドルかどうかのチェック
+	/// </summary>
+	private bool CheckAssetBundleExists(string assetBundleName)
+	{
+#if MUSHA_DEBUG
+		if (!this.resourceList.ContainsKey(assetBundleName))
+		{
+			Debug.LogWarningFormat("リソースリストに無いアセットバンドルです：assetBundleName={0}", assetBundleName);
+			return false;
+		}
+#endif
+		return true;
+	}
+
+	/// <summary>
+	/// アセットが読み込み済みかどうかのチェック
+	/// </summary>
+	private bool CheckAssetLoaded<T>(string assetBundleName, string assetName, out T assetOperation) where T : AssetOperationBase
+	{
+		assetOperation = null;
+#if MUSHA_DEBUG
+		if (!this.CheckAssetBundleExists(assetBundleName))
+		{
+			return false;
+		}
+#endif
+		var data = this.resourceList[assetBundleName];
+		assetOperation = data.FindAssetOperation<T>(assetName);
+#if MUSHA_DEBUG
+		if (assetOperation == null)
+		{
+			Debug.LogWarningFormat(
+				"アセットが存在しないか、読み込まれていません。\n" +
+				"assetBundleName = {0}\n" +
+				"assetName = {1}\n" +
+				"assetOperationType = {2}",
+				assetBundleName,
+				assetName,
+				typeof(T));
+			return false;
+		}
+#endif
+		return true;
 	}
 
 #if UNITY_EDITOR

@@ -27,6 +27,24 @@ public static class CoroutineUtility
 		yield return new WaitForEndOfFrame();
 		action();
 	}
+
+	/// <summary>
+	/// 条件を満たすまで待ってから処理を実行
+	/// </summary>
+	public static IEnumerator WaitUntilAction(Func<bool> predicate, Action action)
+	{
+		yield return new WaitUntil(predicate);
+		action();
+	}
+
+	/// <summary>
+	/// 条件を満たしている間待って処理を実行
+	/// </summary>
+	public static IEnumerator WaitWhileAction(Func<bool> predicate, Action action)
+	{
+		yield return new WaitWhile(predicate);
+		action();
+	}
 }
 
 }//namespace MushaEngine
