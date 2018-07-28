@@ -5,12 +5,12 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 /// <summary>
 /// ボタンイベント
 /// </summary>
-[AddComponentMenu("MushaEngine/ButtonEvent")]
+[AddComponentMenu("MushaSystem/UI/ButtonEvent")]
 public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerExitHandler, IPointerClickHandler
 {
 	/// <summary>
@@ -340,4 +340,4 @@ public class ButtonEvent : MonoBehaviour, IPointerDownHandler, IPointerExitHandl
 	}
 }
 
-}//namespace MushaEngine
+}//namespace MushaSystem

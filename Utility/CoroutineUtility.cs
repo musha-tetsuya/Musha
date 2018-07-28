@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 public static class CoroutineUtility
 {
@@ -47,4 +47,4 @@ public static class CoroutineUtility
 	}
 }
 
-}//namespace MushaEngine
+}//namespace MushaSystem

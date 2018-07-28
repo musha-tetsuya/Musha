@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 /// <summary>
 /// BinaryReader拡張クラス
@@ -112,4 +112,4 @@ public static class BinaryReaderExtension
 	}
 }
 
-}//namespace MushaEngine
+}//namespace MushaSystem

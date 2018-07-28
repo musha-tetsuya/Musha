@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 /// <summary>
 /// Define

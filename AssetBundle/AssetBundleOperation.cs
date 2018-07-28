@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaEngine {
+namespace MushaSystem {
 public partial class AssetBundleLoader : MonoBehaviour {
 
 /// <summary>
@@ -390,4 +390,4 @@ protected class AssetBundleOperation
 }
 
 }
-}//namespace MushaEngine
+}//namespace MushaSystem

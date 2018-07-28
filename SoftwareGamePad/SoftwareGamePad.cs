@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 /// <summary>
 /// ソフトウェアゲームパッド
 /// </summary>
-[AddComponentMenu("MushaEngine/SoftwareGamePad")]
+[AddComponentMenu("MushaSystem/SoftwareGamePad")]
 public class SoftwareGamePad : MonoBehaviour
 {
 	/// <summary>
@@ -86,7 +86,7 @@ public class SoftwareGamePad : MonoBehaviour
 	/// </summary>
 	private Vector2? beforeCanvasSize = null;
 	/// <summary>
-	///
+	/// リスナーリスト
 	/// </summary>
 	private List<IListner> listnerList = new List<IListner>();
 
@@ -243,4 +243,4 @@ public class SoftwareGamePad : MonoBehaviour
 	}
 }
 
-}//namespace MushaEngine
+}//namespace MushaSystem

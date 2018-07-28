@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 /// <summary>
 /// アセット読み込みタスク基底
@@ -252,4 +252,4 @@ public class SubAssetsLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Obje
 }
 
 
-}//namespace MushaEngine
+}//namespace MushaSystem

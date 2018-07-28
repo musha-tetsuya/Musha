@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+namespace MushaSystem {
+
 public sealed class EnumFlagsAttribute : PropertyAttribute
 {
 	public Type enumType = null;
@@ -28,3 +30,5 @@ public sealed class EnumFlagsAttributeDrawer : PropertyDrawer
 	}
 }
 #endif
+
+}//namespace MushaSystem

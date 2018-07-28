@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 
-namespace MushaEditor {
+namespace MushaSystem.EditorTool {
 	
 /// <summary>
 /// Defineシンボル操作
@@ -26,7 +26,7 @@ public partial class DefineSymbolSetting : EditorWindow
 	/// <summary>
 	/// ウィンドウを開く
 	/// </summary>
-	[MenuItem("MushaEditor/DefineSymbolSetting")]
+	[MenuItem("MushaSystem/DefineSymbolSetting")]
 	private static void Open()
 	{
 		EditorWindow.GetWindow<DefineSymbolSetting>();
@@ -95,5 +95,5 @@ public partial class DefineSymbolSetting : EditorWindow
 	}
 }
 
-}//namespace MushaEditor
+}//namespace MushaSystem.EditorTool
 #endif

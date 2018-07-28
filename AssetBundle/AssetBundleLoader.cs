@@ -8,12 +8,12 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaEngine {
+namespace MushaSystem {
 
 /// <summary>
 /// アセットバンドル読み込みクラス
 /// </summary>
-[AddComponentMenu("MushaEngine/AssetBundleLoader")]
+[AddComponentMenu("MushaSystem/AssetBundleLoader")]
 public partial class AssetBundleLoader : MonoBehaviour
 {
 	/// <summary>
@@ -569,17 +569,16 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// </summary>
 	private bool CheckAssetLoaded<T>(string assetBundleName, string assetName, out T assetOperation) where T : AssetOperationBase
 	{
-		assetOperation = null;
-#if MUSHA_DEBUG
 		if (!this.CheckAssetBundleExists(assetBundleName))
 		{
+			assetOperation = null;
 			return false;
 		}
-#endif
+
 		var data = this.resourceList[assetBundleName];
 		assetOperation = data.FindAssetOperation<T>(assetName);
 #if MUSHA_DEBUG
-		if (assetOperation == null)
+		if (assetOperation == null || assetOperation.GetStatus() != AssetOperationBase.Status.isLoaded)
 		{
 			Debug.LogWarningFormat(
 				"アセットが存在しないか、読み込まれていません。\n" +
@@ -596,134 +595,114 @@ public partial class AssetBundleLoader : MonoBehaviour
 	}
 
 #if UNITY_EDITOR
-	#region インスペクター表示
 	/// <summary>
-	/// InspectorGUI：リソースリスト折り畳み表示用
+	/// AssetBundleLoaderのカスタムインスペクター
 	/// </summary>
-	/// <remarks>Editor Only</remarks>
-	private bool foldoutResourceList = false;
-	/// <summary>
-	/// InspectorGUI：読み込み済みアセットバンドル折り畳み表示用
-	/// </summary>
-	/// <remarks>Editor Only</remarks>
-	private bool foldoutLoadedAssetBundles = false;
-	/// <summary>
-	/// InspectorGUI：読み込みタスク折り畳み表示用
-	/// </summary>
-	/// <remarks>Editor Only</remarks>
-	private bool foldoutLoadTaskList = false;
-
-	/// <summary>
-	/// InspectorGUI描画
-	/// </summary>
-	/// <remarks>Editor Only</remarks>
-	public void OnInspectorGUI()
+	[CustomEditor(typeof(AssetBundleLoader))]
+	private class AssetBundleLoaderInspector : Editor
 	{
-		EditorGUI.indentLevel = 0;
+		/// <summary>
+		/// リソースリスト折り畳み表示用
+		/// </summary>
+		private bool foldoutResourceList = false;
+		/// <summary>
+		/// 読み込み済みアセットバンドル折り畳み表示用
+		/// </summary>
+		private bool foldoutLoadedAssetBundles = false;
+		/// <summary>
+		/// 読み込みタスク折り畳み表示用
+		/// </summary>
+		private bool foldoutLoadTaskList = false;
 
-		//サーバーのアセットバンドルディレクトリURL表示
-		EditorGUILayout.LabelField("ServerAssetBundleDirectoryUrl");
-		EditorGUILayout.TextField(this.serverAssetBundleDirectoryUrl);
-
-		//ローカルのリソースリストパス
-		EditorGUILayout.LabelField("LocalResourceListPath");
-		EditorGUILayout.TextField(this.localResourceListPath);
-
-		//サーバーのリソースリストURL
-		EditorGUILayout.LabelField("ServerResourceListUrl");
-		EditorGUILayout.TextField(this.serverResourceListUrl);
-
-		//リソースリスト一覧表示
-		this.foldoutResourceList = EditorGUILayout.Foldout(this.foldoutResourceList, "ResourceList:Count=" + this.resourceList.Count);
-		if (this.foldoutResourceList)
+		/// <summary>
+		/// インスペクター描画
+		/// </summary>
+		public override void OnInspectorGUI()
 		{
-			if (this.resourceList.Count == 0)
+			var target = (AssetBundleLoader)this.target;
+
+			EditorGUI.indentLevel = 0;
+
+			base.OnInspectorGUI();
+
+			//サーバーのアセットバンドルディレクトリURL表示
+			EditorGUILayout.LabelField("ServerAssetBundleDirectoryUrl");
+			EditorGUILayout.TextField(target.serverAssetBundleDirectoryUrl);
+
+			//ローカルのリソースリストパス
+			EditorGUILayout.LabelField("LocalResourceListPath");
+			EditorGUILayout.TextField(target.localResourceListPath);
+
+			//サーバーのリソースリストURL
+			EditorGUILayout.LabelField("ServerResourceListUrl");
+			EditorGUILayout.TextField(target.serverResourceListUrl);
+
+			//リソースリスト一覧表示
+			this.foldoutResourceList = EditorGUILayout.Foldout(this.foldoutResourceList, "ResourceList:Count=" + target.resourceList.Count);
+			if (this.foldoutResourceList)
 			{
-				EditorGUI.indentLevel = 1;
-				EditorGUILayout.LabelField("empty");
-			}
-			else
-			{
-				foreach (var data in this.resourceList.Values)
+				if (target.resourceList.Count == 0)
 				{
 					EditorGUI.indentLevel = 1;
-					data.OnInspectorGUI();
+					EditorGUILayout.LabelField("empty");
+				}
+				else
+				{
+					foreach (var data in target.resourceList.Values)
+					{
+						EditorGUI.indentLevel = 1;
+						data.OnInspectorGUI();
+					}
 				}
 			}
-		}
 
-		EditorGUI.indentLevel = 0;
+			EditorGUI.indentLevel = 0;
 
-		//読み込み済みアセットバンドル一覧表示
-		this.foldoutLoadedAssetBundles = EditorGUILayout.Foldout(this.foldoutLoadedAssetBundles, "LoadedAssetBundles");
-		if (this.foldoutLoadedAssetBundles)
-		{
-			var loadedAssetBundles = this.resourceList.Values.Where(x => x.GetStatus() == AssetBundleOperation.Status.isLoaded);
-			if (loadedAssetBundles.Count() == 0)
+			//読み込み済みアセットバンドル一覧表示
+			this.foldoutLoadedAssetBundles = EditorGUILayout.Foldout(this.foldoutLoadedAssetBundles, "LoadedAssetBundles");
+			if (this.foldoutLoadedAssetBundles)
 			{
-				EditorGUI.indentLevel = 1;
-				EditorGUILayout.LabelField("empty");
-			}
-			else
-			{
-				foreach (var data in loadedAssetBundles)
+				var loadedAssetBundles = target.resourceList.Values.Where(x => x.GetStatus() == AssetBundleOperation.Status.isLoaded);
+				if (loadedAssetBundles.Count() == 0)
 				{
 					EditorGUI.indentLevel = 1;
-					data.isDontUnload = EditorGUILayout.ToggleLeft(data.name, data.isDontUnload, EditorStyles.textField);
-
+					EditorGUILayout.LabelField("empty");
+				}
+				else
+				{
+					foreach (var data in loadedAssetBundles)
+					{
+						EditorGUI.indentLevel = 1;
+						data.isDontUnload = EditorGUILayout.ToggleLeft(data.name, data.isDontUnload, EditorStyles.textField);
+					}
 				}
 			}
-		}
 
-		EditorGUI.indentLevel = 0;
+			EditorGUI.indentLevel = 0;
 
-		//読み込みタスク一覧表示
-		this.foldoutLoadTaskList = EditorGUILayout.Foldout(this.foldoutLoadTaskList, "AssetLoadTaskList:Count=" + this.loadTaskList.Count);
-		if (this.foldoutLoadTaskList)
-		{
-			if (this.loadTaskList.Count == 0)
+			//読み込みタスク一覧表示
+			this.foldoutLoadTaskList = EditorGUILayout.Foldout(this.foldoutLoadTaskList, "AssetLoadTaskList:Count=" + target.loadTaskList.Count);
+			if (this.foldoutLoadTaskList)
 			{
-				EditorGUI.indentLevel = 1;
-				EditorGUILayout.LabelField("empty");
-			}
-			else
-			{
-				for (int i = 0, imax = this.loadTaskList.Count; i < imax; i++)
+				if (target.loadTaskList.Count == 0)
 				{
 					EditorGUI.indentLevel = 1;
-					this.loadTaskList[i].OnInspectorGUI(i);
+					EditorGUILayout.LabelField("empty");
+				}
+				else
+				{
+					for (int i = 0, imax = target.loadTaskList.Count; i < imax; i++)
+					{
+						EditorGUI.indentLevel = 1;
+						target.loadTaskList[i].OnInspectorGUI(i);
+					}
 				}
 			}
+
+			this.Repaint();
 		}
 	}
-	#endregion
 #endif
-
 }
 
-}//namespace MushaEngine
-
-#if UNITY_EDITOR
-namespace MushaEditor {
-
-/// <summary>
-/// AssetBundleLoaderカスタムインスペクター
-/// </summary>
-[CustomEditor(typeof(MushaEngine.AssetBundleLoader))]
-public class AssetBundleLoaderInspector : Editor
-{
-	/// <summary>
-	/// インスペクターGUI描画
-	/// </summary>
-	public override void OnInspectorGUI()
-	{
-		base.OnInspectorGUI();
-
-		(this.target as MushaEngine.AssetBundleLoader).OnInspectorGUI();
-
-		this.Repaint();
-	}
-}
-
-}//namespace MushaEditor
-#endif
+}//namespace MushaSystem
