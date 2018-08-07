@@ -8,6 +8,7 @@ namespace MushaSystem {
 /// <summary>
 /// キャンバスサイズに合わせてスケールを調整するクラス
 /// </summary>
+[AddComponentMenu("MushaSystem/UI/CanvasContentScaler")]
 [RequireComponent(typeof(CanvasScaler))]
 public class CanvasContentScaler : MonoBehaviour
 {
