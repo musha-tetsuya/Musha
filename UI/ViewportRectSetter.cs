@@ -10,6 +10,8 @@ namespace MushaSystem {
 [AddComponentMenu("MushaSystem/UI/ViewportRectSetter")]
 public class ViewportRectSetter : MonoBehaviour
 {
+	private const float LANDSCAPE_BEZELLESS_ASPECT = 724f / 354f;
+	private const float PORTRAIT_BEZELLESS_ASPECT = 375f / 734f;
 	/// <summary>
 	/// 配置定数
 	/// </summary>
@@ -53,39 +55,44 @@ public class ViewportRectSetter : MonoBehaviour
 	/// 子供
 	/// </summary>
 	private List<ViewportRectSetter> children = new List<ViewportRectSetter>();
-	/// <summary>
-	/// 前回の実機画面サイズ
-	/// </summary>
-	private Vector2 beforeRealScreenSize = Vector2.zero;
-
 
 	/// <summary>
-	/// Awake
+	/// Start
 	/// </summary>
-	private void Awake()
+	private void Start()
 	{
-		//親に自分を登録
-		if (this.parent != null && !this.parent.children.Contains(this))
+		if (this.parent == null)
 		{
+			//画面サイズ変化時イベントを登録
+			ScreenManager.AddChangeScreenSizeEvent(this.OnChangeScreenSize);
+		}
+		else if (!this.parent.children.Contains(this))
+		{
+			//親に自分を登録
 			this.parent.children.Add(this);
 		}
 	}
 
 	/// <summary>
-	/// Update
+	/// OnDestroy
 	/// </summary>
-	private void Update()
+	private void OnDestroy()
 	{
-		//親がいない場合、実機画面を親として自分を更新する
-		if (this.parent == null)
-		{
-			//実機画面サイズに変化があった場合だけ更新
-			var parentScreenSize = GetRealScreenSize();
-			if (parentScreenSize != beforeRealScreenSize)
-			{
-				this.UpdateViewportRect(parentScreenSize, new Rect(0, 0, 1, 1));
-			}
-		}
+		//画面サイズ変化時イベントを除去
+		ScreenManager.RemoveCangeScreenSizeEvent(this.OnChangeScreenSize);
+	}
+
+	/// <summary>
+	/// 画面サイズに変更があった時に呼ばれる
+	/// </summary>
+	private void OnChangeScreenSize()
+	{
+		Vector2 realScreenSize = ScreenManager.GetRealScreenSize();
+		Rect safeArea = ScreenManager.GetSafeArea();
+		Rect safeAreaRect = new Rect(
+			position: safeArea.position / realScreenSize,
+			size: safeArea.size / realScreenSize);
+		this.UpdateViewportRect(safeArea.size, safeAreaRect);
 	}
 
 	/// <summary>
@@ -135,23 +142,6 @@ public class ViewportRectSetter : MonoBehaviour
 		{
 			this.children[i].UpdateViewportRect(this.screenSize, this.viewportRect);
 		}
-	}
-
-	/// <summary>
-	/// 実機画面サイズ取得
-	/// </summary>
-	private static Vector2 GetRealScreenSize()
-	{
-		Vector2 size = Vector2.zero;
-#if UNITY_EDITOR
-		var res = UnityEditor.UnityStats.screenRes.Split('x');
-		size.x = int.Parse(res[0]);
-		size.y = int.Parse(res[1]);
-#else
-		size.x = Screen.width;
-		size.y = Screen.height;
-#endif
-		return size;
 	}
 }
 

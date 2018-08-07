@@ -65,6 +65,10 @@ public class SoftwareGamePad : MonoBehaviour
 	/// </summary>
 	[SerializeField]private RectTransform canvasTransform = null;
 	/// <summary>
+	/// セーフエリア
+	/// </summary>
+	[SerializeField]private RectTransform safeAreaTransform = null;
+	/// <summary>
 	/// ゲームパッドの左側
 	/// </summary>
 	[SerializeField]private RectTransform areaLeft = null;
@@ -82,10 +86,6 @@ public class SoftwareGamePad : MonoBehaviour
 	[SerializeField]private ButtonEvent[] buttonEvent = null;
 
 	/// <summary>
-	/// １フレーム前のキャンバスサイズ
-	/// </summary>
-	private Vector2? beforeCanvasSize = null;
-	/// <summary>
 	/// リスナーリスト
 	/// </summary>
 	private List<IListner> listnerList = new List<IListner>();
@@ -95,37 +95,41 @@ public class SoftwareGamePad : MonoBehaviour
 	/// </summary>
 	private void Start()
 	{
-		this.UpdatePadScale();
+		//画面サイズ変化時イベントを登録
+		ScreenManager.AddChangeScreenSizeEvent(this.OnChangeScreenSize);
+
+		//ボタンの透明部分へのレイキャストを無視する
 		this.RaycastIgnoreTransparent();
 	}
 
-#if UNITY_EDITOR
 	/// <summary>
-	/// Update
+	/// OnDestroy
 	/// </summary>
-	private void Update()
+	private void OnDestroy()
 	{
-		this.UpdatePadScale();
+		//画面サイズ変化時イベントの除去
+		ScreenManager.RemoveCangeScreenSizeEvent(this.OnChangeScreenSize);
 	}
-#endif
 
 	/// <summary>
-	/// 画面サイズに合わせてパッドのスケールを更新
+	/// 画面サイズに変化があった時に呼ばれる
 	/// </summary>
-	private void UpdatePadScale()
+	private void OnChangeScreenSize()
 	{
-		//前回からキャンバスサイズに変更があったかチェック
-		if (this.canvasTransform.sizeDelta != this.beforeCanvasSize)
-		{
-			//現在のキャンバスサイズを保存
-			this.beforeCanvasSize = this.canvasTransform.sizeDelta;
+		//セーフエリアのサイズと位置を調整
+		Rect safeArea = ScreenManager.GetSafeArea();
+		this.safeAreaTransform.sizeDelta = new Vector2(
+			safeArea.width / this.canvasTransform.localScale.x,
+			safeArea.height / this.canvasTransform.localScale.y);
+		this.safeAreaTransform.anchoredPosition = new Vector2(
+			safeArea.position.x / this.canvasTransform.localScale.x,
+			safeArea.position.y / this.canvasTransform.localScale.y);
 
-			//現在のキャンバスサイズの場合、パッドのスケールをどれぐらいにするべきか計算（最大１）
-			var scale = this.canvasTransform.sizeDelta / this.totalAreaSize;
-			float areaScaleValue = Mathf.Min(scale.x, scale.y, 1f);
-			this.areaLeft.localScale =
-			this.areaRight.localScale = new Vector3(areaScaleValue, areaScaleValue, 1f);
-		}
+		//現在のセーフエリアのサイズの場合、パッドのスケールをどれぐらいにするべきか計算（最大１）
+		Vector2 scale = this.safeAreaTransform.sizeDelta / this.totalAreaSize;
+		float areaScaleValue = Mathf.Min(scale.x, scale.y, 1f);
+		this.areaLeft.localScale =
+		this.areaRight.localScale = new Vector3(areaScaleValue, areaScaleValue, 1f);
 	}
 
 	/// <summary>
