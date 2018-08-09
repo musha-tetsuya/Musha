@@ -57,9 +57,9 @@ public class ViewportRectSetter : MonoBehaviour
 	private List<ViewportRectSetter> children = new List<ViewportRectSetter>();
 
 	/// <summary>
-	/// Start
+	/// Awake
 	/// </summary>
-	private void Start()
+	private void Awake()
 	{
 		if (this.parent == null)
 		{
@@ -78,8 +78,11 @@ public class ViewportRectSetter : MonoBehaviour
 	/// </summary>
 	private void OnDestroy()
 	{
-		//画面サイズ変化時イベントを除去
-		ScreenManager.RemoveCangeScreenSizeEvent(this.OnChangeScreenSize);
+		if (this.parent == null)
+		{
+			//画面サイズ変化時イベントを除去
+			ScreenManager.RemoveCangeScreenSizeEvent(this.OnChangeScreenSize);
+		}
 	}
 
 	/// <summary>

@@ -91,9 +91,9 @@ public class SoftwareGamePad : MonoBehaviour
 	private List<IListner> listnerList = new List<IListner>();
 
 	/// <summary>
-	/// Start
+	/// Awake
 	/// </summary>
-	private void Start()
+	private void Awake()
 	{
 		//画面サイズ変化時イベントを登録
 		ScreenManager.AddChangeScreenSizeEvent(this.OnChangeScreenSize);

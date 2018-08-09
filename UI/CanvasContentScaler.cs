@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace MushaSystem {
 
@@ -10,27 +11,53 @@ namespace MushaSystem {
 /// </summary>
 [AddComponentMenu("MushaSystem/UI/CanvasContentScaler")]
 [RequireComponent(typeof(CanvasScaler))]
-public class CanvasContentScaler : MonoBehaviour
+public class CanvasContentScaler : UIBehaviour
 {
 	/// <summary>
 	/// RectTransform
 	/// </summary>
-	private RectTransform rectTransform = null;
+	private RectTransform m_rectTransform = null;
 	/// <summary>
 	/// CanvasScaler
 	/// </summary>
-	private CanvasScaler canvasScaler = null;
+	private CanvasScaler m_canvasScaler = null;
 
 	/// <summary>
 	/// Awake
 	/// </summary>
-	private void Awake()
+	protected override void Awake()
 	{
-		this.rectTransform = this.GetComponent<RectTransform>();
-		this.canvasScaler = this.GetComponentInParent<CanvasScaler>();
+		base.Awake();
 
 		//画面サイズ変化時イベントを登録
 		ScreenManager.AddChangeScreenSizeEvent(this.OnChangeScreenSize);
+	}
+
+	/// <summary>
+	/// OnDestroy
+	/// </summary>
+	protected override void OnDestroy()
+	{
+		//画面サイズ変化時イベントを除去
+		ScreenManager.RemoveCangeScreenSizeEvent(this.OnChangeScreenSize);
+
+		base.OnDestroy();
+	}
+
+	/// <summary>
+	/// RectTransform
+	/// </summary>
+	private RectTransform rectTransform
+	{
+		get { return this.m_rectTransform ?? (this.m_rectTransform = this.GetComponent<RectTransform>()); }
+	}
+
+	/// <summary>
+	/// CanvasScaler
+	/// </summary>
+	private CanvasScaler canvasScaler
+	{
+		get { return this.m_canvasScaler ?? (this.m_canvasScaler = this.GetComponent<CanvasScaler>()); }
 	}
 
 	/// <summary>
@@ -38,14 +65,14 @@ public class CanvasContentScaler : MonoBehaviour
 	/// </summary>
 	private void OnChangeScreenSize()
 	{
-		//キャンバスサイズ変化時イベントを登録
-		Canvas.willRenderCanvases += this.OnChangeCanvasSize;
+		Vector2 realScreenSize = ScreenManager.GetRealScreenSize();
+		this.canvasScaler.matchWidthOrHeight = (realScreenSize.x < realScreenSize.y) ? 0f : 1f;
 	}
 
 	/// <summary>
 	/// キャンバスサイズ変化時イベント
 	/// </summary>
-	private void OnChangeCanvasSize()
+	protected override void OnRectTransformDimensionsChange()
 	{
 		//キャンバス内に収めるため子供のスケール値を調整
 		var childScale = new Vector3(
@@ -57,9 +84,6 @@ public class CanvasContentScaler : MonoBehaviour
 		{
 			child.localScale = childScale;
 		}
-
-		//キャンバスサイズ変化時イベントを除去
-		Canvas.willRenderCanvases -= this.OnChangeCanvasSize;
 	}
 }
 
