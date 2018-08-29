@@ -34,6 +34,17 @@ public class CanvasContentScaler : UIBehaviour
 	}
 
 	/// <summary>
+	/// OnEnable
+	/// </summary>
+	protected override void OnEnable()
+	{
+		base.OnEnable();
+
+		//アクティブ復帰時には画面サイズ変化時イベントを呼ぶ
+		this.OnChangeScreenSize();
+	}
+
+	/// <summary>
 	/// OnDestroy
 	/// </summary>
 	protected override void OnDestroy()

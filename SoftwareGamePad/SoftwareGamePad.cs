@@ -103,6 +103,15 @@ public class SoftwareGamePad : MonoBehaviour
 	}
 
 	/// <summary>
+	/// OnEnable
+	/// </summary>
+	private void OnEnable()
+	{
+		//アクティブ復帰時には画面サイズ変化時イベントを呼ぶ
+		this.OnChangeScreenSize();
+	}
+
+	/// <summary>
 	/// OnDestroy
 	/// </summary>
 	private void OnDestroy()
