@@ -33,11 +33,11 @@ protected abstract class AssetOperationBase
 	/// <summary>
 	/// AssetBundleRequest
 	/// </summary>
-	private AssetBundleRequest request = null;
+	protected AssetBundleRequest request = null;
 	/// <summary>
 	/// 読み込み完了時コールバック
 	/// </summary>
-	private Action onLoad = null;
+	protected Action onLoad = null;
 
 	/// <summary>
 	/// construct
@@ -62,7 +62,7 @@ protected abstract class AssetOperationBase
 	/// <summary>
 	/// 状態取得
 	/// </summary>
-	public Status GetStatus()
+	public virtual Status GetStatus()
 	{
 		return this.request == null ? Status.None
 			 : this.request.isDone  ? Status.isLoaded
@@ -70,69 +70,9 @@ protected abstract class AssetOperationBase
 	}
 
 	/// <summary>
-	/// 単体アセット取得
-	/// </summary>
-	public T GetAsset<T>() where T : UnityEngine.Object
-	{
-		Debug.AssertFormat(this.GetStatus() == Status.isLoaded, "読み込みが完了していません。{0}:{1}", this.GetType(), this.assetName);
-		Debug.AssertFormat(this.request.asset != null, "{0}は{1}型のアセットではありません。", this.assetName, typeof(T));
-		return (T)this.request.asset;
-	}
-
-	/// <summary>
-	/// アセット配列取得
-	/// </summary>
-	public T[] GetAllAssets<T>() where T : UnityEngine.Object
-	{
-		Debug.AssertFormat(this.GetStatus() == Status.isLoaded, "読み込みが完了していません。{0}:{1}", this.GetType(), this.assetName);
-		Debug.AssertFormat(this.request.allAssets.Length > 0, "{0}型のアセットが含まれていません。{1}:{2}", typeof(T), this.GetType(), this.assetName);
-		return Array.ConvertAll(this.request.allAssets, x => x as T);
-	}
-
-	/// <summary>
-	/// 読み込み完了時コールバックの追加
-	/// </summary>
-	public void AddCallBack<T>(Action<T> onLoad) where T : UnityEngine.Object
-	{
-		if (onLoad != null)
-		{
-			this.onLoad += () => onLoad(this.GetAsset<T>());
-		}
-	}
-
-	/// <summary>
-	/// 読み込み完了時コールバックの追加
-	/// </summary>
-	public void AddCallBack<T>(Action<T[]> onLoad) where T : UnityEngine.Object
-	{
-		if (onLoad != null)
-		{
-			this.onLoad += () => onLoad(this.GetAllAssets<T>());
-		}
-	}
-
-	/// <summary>
 	/// 読み込み開始
 	/// </summary>
-	public void Load(AssetBundle assetBundle)
-	{
-		if (this.request == null && this.CreateAssetBundleRequest(assetBundle, out this.request))
-		{
-			this.request.completed += (op) =>
-			{
-				if (this.onLoad != null)
-				{
-					this.onLoad();
-					this.onLoad = null;
-				}
-			};
-		}
-	}
-
-	/// <summary>
-	/// AssetBundleRequestの作成
-	/// </summary>
-	protected abstract bool CreateAssetBundleRequest(AssetBundle assetBundle, out AssetBundleRequest request);
+	public abstract void Load(AssetBundle assetBundle);
 
 #if UNITY_EDITOR
 	#region InspectorGUI
@@ -160,10 +100,21 @@ protected abstract class AssetOperationBase
 		{
 			if (this.GetStatus() == Status.isLoaded)
 			{
-				EditorGUILayout.TextField(this.assetName);
-				foreach (var asset in this.request.allAssets)
+				if (this is SceneAssetOperation)
 				{
-					EditorGUILayout.TextField(asset.GetType().Name, asset.name);
+					string[] allScenePaths = (this as SceneAssetOperation).GetAllScenePaths();
+					foreach (var scenePath in allScenePaths)
+					{
+						EditorGUILayout.TextField(typeof(string).Name, scenePath);
+					}
+				}
+				else
+				{
+					EditorGUILayout.TextField(this.assetName);
+					foreach (var asset in this.request.allAssets)
+					{
+						EditorGUILayout.TextField(asset.GetType().Name, asset.name);
+					}
 				}
 			}
 			else
@@ -191,20 +142,82 @@ protected class AssetOperation<T> : AssetOperationBase where T : UnityEngine.Obj
 	}
 
 	/// <summary>
-	/// AssetBundleRequestの作成
+	/// 単体アセット取得
 	/// </summary>
-	protected override bool CreateAssetBundleRequest(AssetBundle assetBundle, out AssetBundleRequest request)
+	public T GetAsset()
 	{
-		if (assetBundle.Contains(this.assetName))
+		Debug.AssertFormat(this.GetStatus() == Status.isLoaded, "読み込みが完了していません。{0}:{1}", this.GetType(), this.assetName);
+		Debug.AssertFormat(this.request.asset != null, "{0}は{1}型のアセットではありません。", this.assetName, typeof(T));
+		return (T)this.request.asset;
+	}
+
+	/// <summary>
+	/// 読み込み完了時コールバックの追加
+	/// </summary>
+	public void AddCallBack(Action<T> onLoad)
+	{
+		if (onLoad != null)
 		{
-			request = assetBundle.LoadAssetAsync<T>(this.assetName);
-			return true;
+			this.onLoad += () => onLoad(this.GetAsset());
 		}
-		else
+	}
+
+	/// <summary>
+	/// 読み込み開始
+	/// </summary>
+	public override void Load(AssetBundle assetBundle)
+	{
+		if (this.request == null)
 		{
-			Debug.LogWarningFormat("AssetBundle={0}にassetName={1}は含まれていません", assetBundle.name, this.assetName);
-			request = null;
-			return false;
+			if (assetBundle.Contains(this.assetName))
+			{
+				this.request = assetBundle.LoadAssetAsync<T>(this.assetName);
+				this.request.completed += (op) =>
+				{
+					this.onLoad.SafetyInvoke();
+					this.onLoad = null;
+				};
+			}
+			else
+			{
+				Debug.LogWarningFormat("AssetBundle={0}にassetName={1}は含まれていません", assetBundle.name, this.assetName);
+			}
+		}
+	}
+}
+
+/// <summary>
+/// アセット配列管理クラス
+/// </summary>
+protected abstract class AssetsOperation<T> : AssetOperationBase where T : UnityEngine.Object
+{
+	/// <summary>
+	/// construct
+	/// </summary>
+	protected AssetsOperation(string assetName, Action<T[]> onLoad)
+		: base(assetName, typeof(T))
+	{
+		this.AddCallBack(onLoad);
+	}
+
+	/// <summary>
+	/// アセット配列取得
+	/// </summary>
+	public T[] GetAllAssets()
+	{
+		Debug.AssertFormat(this.GetStatus() == Status.isLoaded, "読み込みが完了していません。{0}:{1}", this.GetType(), this.assetName);
+		Debug.AssertFormat(this.request.allAssets.Length > 0, "{0}型のアセットが含まれていません。{1}:{2}", typeof(T), this.GetType(), this.assetName);
+		return Array.ConvertAll(this.request.allAssets, x => x as T);
+	}
+
+	/// <summary>
+	/// 読み込み完了時コールバックの追加
+	/// </summary>
+	public void AddCallBack(Action<T[]> onLoad)
+	{
+		if (onLoad != null)
+		{
+			this.onLoad += () => onLoad(this.GetAllAssets());
 		}
 	}
 }
@@ -212,56 +225,134 @@ protected class AssetOperation<T> : AssetOperationBase where T : UnityEngine.Obj
 /// <summary>
 /// 全体アセット管理クラス
 /// </summary>
-protected class AllAssetsOperation<T> : AssetOperationBase where T : UnityEngine.Object
+protected class AllAssetsOperation<T> : AssetsOperation<T> where T : UnityEngine.Object
 {
 	/// <summary>
 	/// construct
 	/// </summary>
 	public AllAssetsOperation(Action<T[]> onLoad)
-		: base(null, typeof(T))
+		: base(null, onLoad)
 	{
-		this.AddCallBack(onLoad);
 	}
 
 	/// <summary>
-	/// AssetBundleRequestの作成
+	/// 読み込み開始
 	/// </summary>
-	protected override bool CreateAssetBundleRequest(AssetBundle assetBundle, out AssetBundleRequest request)
+	public override void Load(AssetBundle assetBundle)
 	{
-		request = assetBundle.LoadAllAssetsAsync<T>();
-		return true;
+		if (this.request == null)
+		{
+			this.request = assetBundle.LoadAllAssetsAsync<T>();
+			this.request.completed += (op) =>
+			{
+				this.onLoad.SafetyInvoke();
+				this.onLoad = null;
+			};
+		}
 	}
 }
 
 /// <summary>
 /// サブアセット管理クラス
 /// </summary>
-protected class SubAssetsOperation<T> : AssetOperationBase where T : UnityEngine.Object
+protected class SubAssetsOperation<T> : AssetsOperation<T> where T : UnityEngine.Object
 {
 	/// <summary>
 	/// construct
 	/// </summary>
 	public SubAssetsOperation(string assetName, Action<T[]> onLoad)
-		: base(assetName, typeof(T))
+		: base(assetName, onLoad)
+	{
+	}
+
+	/// <summary>
+	/// 読み込み開始
+	/// </summary>
+	public override void Load(AssetBundle assetBundle)
+	{
+		if (this.request == null)
+		{
+			if (assetBundle.Contains(this.assetName))
+			{
+				this.request = assetBundle.LoadAssetWithSubAssetsAsync<T>(this.assetName);
+				this.request.completed += (op) =>
+				{
+					this.onLoad.SafetyInvoke();
+					this.onLoad = null;
+				};
+			}
+			else
+			{
+				Debug.LogWarningFormat("AssetBundle={0}にassetName={1}は含まれていません", assetBundle.name, this.assetName);
+			}
+		}
+	}
+}
+
+/// <summary>
+/// シーンアセット管理クラス
+/// </summary>
+protected class SceneAssetOperation : AssetOperationBase
+{
+	/// <summary>
+	/// シーンパス配列
+	/// </summary>
+	private string[] allScenePaths = null;
+
+	/// <summary>
+	/// construct
+	/// </summary>
+	public SceneAssetOperation(Action<string[]> onLoad)
+		: base(null, typeof(string[]))
 	{
 		this.AddCallBack(onLoad);
 	}
 
 	/// <summary>
-	/// AssetBundleRequestの作成
+	/// desturct
 	/// </summary>
-	protected override bool CreateAssetBundleRequest(AssetBundle assetBundle, out AssetBundleRequest request)
+	~SceneAssetOperation()
 	{
-		if (assetBundle.Contains(this.assetName))
+		this.allScenePaths = null;
+	}
+
+	/// <summary>
+	/// 状態取得
+	/// </summary>
+	public override Status GetStatus()
+	{
+		return (this.allScenePaths == null) ? Status.isLoading : Status.isLoaded;
+	}
+
+	/// <summary>
+	/// シーンパス配列取得
+	/// </summary>
+	public string[] GetAllScenePaths()
+	{
+		return this.allScenePaths;
+	}
+
+	/// <summary>
+	/// 読み込み完了時コールバックの追加
+	/// </summary>
+	public void AddCallBack(Action<string[]> onLoad)
+	{
+		if (onLoad != null)
 		{
-			request = assetBundle.LoadAssetWithSubAssetsAsync<T>(this.assetName);
-			return true;
+			this.onLoad += () => onLoad(this.allScenePaths);
 		}
-		else
+	}
+
+	/// <summary>
+	/// 読み込み開始
+	/// </summary>
+	public override void Load(AssetBundle assetBundle)
+	{
+		if (this.allScenePaths == null)
 		{
-			Debug.LogWarningFormat("AssetBundle={0}にassetName={1}は含まれていません", assetBundle.name, this.assetName);
-			request = null;
-			return false;
+			this.allScenePaths = assetBundle.GetAllScenePaths();
+			this.onLoad.SafetyInvoke();
+			this.onLoad = null;
 		}
 	}
 }

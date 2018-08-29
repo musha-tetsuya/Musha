@@ -251,5 +251,52 @@ public class SubAssetsLoadTask<T> : AssetLoadTaskBase where T : UnityEngine.Obje
 	}
 }
 
+/// <summary>
+/// シーンアセット読み込みタスク
+/// </summary>
+public class SceneAssetLoadTask : AssetLoadTaskBase
+{
+	/// <summary>
+	/// 読み込み完了時コールバック
+	/// </summary>
+	private Action<string[]> onLoad = null;
+
+	/// <summary>
+	/// construct
+	/// </summary>
+	public SceneAssetLoadTask(string assetBundleName, Action<string[]> onLoad = null)
+		: base(assetBundleName, null, typeof(string[]))
+	{
+		if (onLoad != null)
+		{
+			this.onLoad += onLoad;
+		}
+	}
+
+	/// <summary>
+	/// destruct
+	/// </summary>
+	~SceneAssetLoadTask()
+	{
+		this.onLoad = null;
+	}
+
+	/// <summary>
+	/// コールバック追加
+	/// </summary>
+	public override void AddCallBack(Action action)
+	{
+		this.onLoad += (scenePaths) => action();
+	}
+
+	/// <summary>
+	/// 読み込み処理
+	/// </summary>
+	public override void Load(AssetBundleLoader loader)
+	{
+		base.Load(null);
+		loader.LoadScenePaths(this.assetBundleName, this.onLoad);
+	}
+}
 
 }//namespace MushaSystem

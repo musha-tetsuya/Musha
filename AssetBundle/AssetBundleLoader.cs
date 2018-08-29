@@ -211,7 +211,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//１フレーム後にコールバック実行
 			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
 			{
-				onLoad.SafetyInvoke(assetOperation.GetAsset<T>());
+				onLoad.SafetyInvoke(assetOperation.GetAsset());
 			}));
 		}
 		//ロード中
@@ -253,7 +253,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//１フレーム後にコールバック実行
 			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
 			{
-				onLoad.SafetyInvoke(assetOperation.GetAllAssets<T>());
+				onLoad.SafetyInvoke(assetOperation.GetAllAssets());
 			}));
 		}
 		//ロード中
@@ -296,7 +296,49 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//１フレーム後にコールバック実行
 			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
 			{
-				onLoad.SafetyInvoke(assetOperation.GetAllAssets<T>());
+				onLoad.SafetyInvoke(assetOperation.GetAllAssets());
+			}));
+		}
+		//ロード中
+		else
+		{
+			//コールバック追加
+			assetOperation.AddCallBack(onLoad);
+		}
+	}
+
+	/// <summary>
+	/// シーンアセットバンドルの読み込み
+	/// </summary>
+	/// <param name="assetBundleName">アセットバンドル名</param>
+	/// <param name="onLoad">読み込み完了時コールバック</param>
+	public void LoadScenePaths(string assetBundleName, Action<string[]> onLoad = null)
+	{
+		if (!this.CheckAssetBundleExists(assetBundleName))
+		{
+			onLoad.SafetyInvoke(null);
+			return;
+		}
+
+		AssetBundleOperation data = this.resourceList[assetBundleName];
+		var assetOperation = data.FindAssetOperation<SceneAssetOperation>();
+
+		//初めての読み込み
+		if (assetOperation == null)
+		{
+			//アセット管理データさくせい
+			assetOperation = new SceneAssetOperation(onLoad);
+			data.AddAssetOperation(assetOperation);
+			//読み込み開始
+			this.UpdateAssetBundleOperation(data);
+		}
+		//ロード済み
+		else if (assetOperation.GetStatus() == AssetOperationBase.Status.isLoaded)
+		{
+			//１フレーム後にコールバック実行
+			StartCoroutine(CoroutineUtility.WaitForFrameAction(1, () =>
+			{
+				onLoad.SafetyInvoke(assetOperation.GetAllScenePaths());
 			}));
 		}
 		//ロード中
@@ -380,7 +422,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 
 		if (this.CheckAssetLoaded<AssetOperation<T>>(assetBundleName, assetName, out assetOperation))
 		{
-			return assetOperation.GetAsset<T>();
+			return assetOperation.GetAsset();
 		}
 		else
 		{
@@ -398,7 +440,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 
 		if (this.CheckAssetLoaded<AllAssetsOperation<T>>(assetBundleName, null, out assetOperation))
 		{
-			return assetOperation.GetAllAssets<T>();
+			return assetOperation.GetAllAssets();
 		}
 		else
 		{
@@ -417,7 +459,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 
 		if (this.CheckAssetLoaded<SubAssetsOperation<T>>(assetBundleName, assetName, out assetOperation))
 		{
-			return assetOperation.GetAllAssets<T>();
+			return assetOperation.GetAllAssets();
 		}
 		else
 		{
