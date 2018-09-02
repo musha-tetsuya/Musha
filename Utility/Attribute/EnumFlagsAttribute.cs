@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaSystem {
+namespace Musha {
 
 public sealed class EnumFlagsAttribute : PropertyAttribute
 {
@@ -31,4 +31,4 @@ public sealed class EnumFlagsAttributeDrawer : PropertyDrawer
 }
 #endif
 
-}//namespace MushaSystem
+}//namespace Musha

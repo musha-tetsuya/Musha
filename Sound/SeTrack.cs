@@ -7,12 +7,12 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// SEトラック
 /// </summary>
-[AddComponentMenu("MushaSystem/Sound/SeTrack")]
+[AddComponentMenu("Musha/Sound/SeTrack")]
 public class SeTrack : MonoBehaviour
 {
 	/// <summary>
@@ -242,4 +242,4 @@ public class SeTrack : MonoBehaviour
 #endif
 }
 
-}//namespace MushaSystem
+}//namespace Musha

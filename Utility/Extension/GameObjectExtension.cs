@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// GameObject拡張
@@ -25,4 +25,4 @@ public static class GameObjectExtension
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

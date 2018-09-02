@@ -5,12 +5,12 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// サウンドマネージャ
 /// </summary>
-[AddComponentMenu("MushaSystem/Sound/SoundManager")]
+[AddComponentMenu("Musha/Sound/SoundManager")]
 public class SoundManager : MonoBehaviour
 {
 	/// <summary>
@@ -168,4 +168,4 @@ public class SoundManager : MonoBehaviour
 #endif
 }
 
-}//namespace MushaSystem
+}//namespace Musha

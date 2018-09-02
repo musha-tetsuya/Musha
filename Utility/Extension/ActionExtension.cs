@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// Action拡張
@@ -33,4 +33,4 @@ public static class ActionExtension
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

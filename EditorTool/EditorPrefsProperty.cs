@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace MushaSystem.EditorTool {
+namespace Musha.EditorTool {
 
 /// <summary>
 /// EditorPrefsProperty
@@ -76,5 +76,5 @@ public class EditorPrefsString : EditorPrefsProperty<string>
 	}
 }
 
-}//namespace MushaSystem.EditorTool
+}//namespace Musha.EditorTool
 #endif

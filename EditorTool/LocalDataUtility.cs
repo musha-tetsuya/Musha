@@ -6,7 +6,7 @@ using System.IO;
 using UnityEngine;
 using UnityEditor;
 
-namespace MushaSystem.EditorTool {
+namespace Musha.EditorTool {
 
 /// <summary>
 /// ローカルデータ取り扱いクラス
@@ -16,7 +16,7 @@ public class LocalDataUtility
 	/// <summary>
 	/// ローカルデータディレクトリを開く
 	/// </summary>
-	[MenuItem("MushaSystem/Open LocalDataDirectory")]
+	[MenuItem("Musha/Open LocalDataDirectory")]
 	private static void OpenLocalDataDirectory()
 	{
 		Directory.CreateDirectory(Define.GetLocalDataDirectoryPath());
@@ -24,5 +24,5 @@ public class LocalDataUtility
 	}
 }
 
-}//namespace MushaSystem.EditorTool
+}//namespace Musha.EditorTool
 #endif

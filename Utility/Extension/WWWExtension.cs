@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// WWW拡張
@@ -25,4 +25,4 @@ public static class WWWExtension
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

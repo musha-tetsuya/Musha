@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaSystem {
+namespace Musha {
 public partial class AssetBundleLoader : MonoBehaviour {
 
 /// <summary>
@@ -358,4 +358,4 @@ protected class SceneAssetOperation : AssetOperationBase
 }
 
 }
-}//namespace MushaSystem
+}//namespace Musha

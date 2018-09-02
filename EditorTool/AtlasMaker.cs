@@ -5,7 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEditor;
 
-namespace MushaSystem.EditorTool {
+namespace Musha.EditorTool {
 
 /// <summary>
 /// アトラスメーカー
@@ -25,7 +25,7 @@ public class AtlasMaker : EditorWindow
 	/// </summary>
 	private EditorPrefsString destPath = null;
 
-	[MenuItem("MushaSystem/AtlasMaker")]
+	[MenuItem("Musha/AtlasMaker")]
 	private static void Open()
 	{
 		GetWindow<AtlasMaker>();
@@ -483,5 +483,5 @@ public class AtlasParts
 	}
 }
 
-}//namespace MushaSystem.EditorTool
+}//namespace Musha.EditorTool
 #endif

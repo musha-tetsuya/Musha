@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// スクリーンマネージャ
 /// </summary>
-[AddComponentMenu("MushaSystem/UI/ScreenManager")]
+[AddComponentMenu("Musha/UI/ScreenManager")]
 public class ScreenManager : MonoBehaviour
 {
 	/// <summary>
@@ -139,4 +139,4 @@ public class ScreenManager : MonoBehaviour
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

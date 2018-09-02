@@ -8,12 +8,12 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// アセットバンドル読み込みクラス
 /// </summary>
-[AddComponentMenu("MushaSystem/AssetBundleLoader")]
+[AddComponentMenu("Musha/AssetBundleLoader")]
 public partial class AssetBundleLoader : MonoBehaviour
 {
 	/// <summary>
@@ -747,4 +747,4 @@ public partial class AssetBundleLoader : MonoBehaviour
 #endif
 }
 
-}//namespace MushaSystem
+}//namespace Musha

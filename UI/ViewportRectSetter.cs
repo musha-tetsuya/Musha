@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// 表示領域設定
 /// </summary>
-[AddComponentMenu("MushaSystem/UI/ViewportRectSetter")]
+[AddComponentMenu("Musha/UI/ViewportRectSetter")]
 public class ViewportRectSetter : MonoBehaviour
 {
 	private const float LANDSCAPE_BEZELLESS_ASPECT = 724f / 354f;
@@ -160,4 +160,4 @@ public class ViewportRectSetter : MonoBehaviour
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

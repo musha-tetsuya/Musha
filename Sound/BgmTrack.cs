@@ -7,12 +7,12 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// BGMトラック
 /// </summary>
-[AddComponentMenu("MushaSystem/Sound/BgmTrack")]
+[AddComponentMenu("Musha/Sound/BgmTrack")]
 [RequireComponent(typeof(AudioSource))]
 public class BgmTrack : MonoBehaviour
 {
@@ -317,5 +317,5 @@ public class BgmTrack : MonoBehaviour
 #endif
 }
 
-}//namespace MushaSystem
+}//namespace Musha
 

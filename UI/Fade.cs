@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// フェード
 /// </summary>
-[AddComponentMenu("MushaSystem/UI/Fade")]
+[AddComponentMenu("Musha/UI/Fade")]
 [RequireComponent(typeof(Camera))]
 public class Fade : MonoBehaviour
 {
@@ -121,4 +121,4 @@ public class Fade : MonoBehaviour
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

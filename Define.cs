@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// Define
@@ -63,4 +63,4 @@ public class Define
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

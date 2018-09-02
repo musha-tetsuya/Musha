@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// ソフトウェアゲームパッド
 /// </summary>
-[AddComponentMenu("MushaSystem/SoftwareGamePad")]
+[AddComponentMenu("Musha/SoftwareGamePad")]
 public class SoftwareGamePad : MonoBehaviour
 {
 	/// <summary>
@@ -256,4 +256,4 @@ public class SoftwareGamePad : MonoBehaviour
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

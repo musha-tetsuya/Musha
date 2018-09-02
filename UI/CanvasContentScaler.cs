@@ -4,12 +4,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-namespace MushaSystem {
+namespace Musha {
 
 /// <summary>
 /// キャンバスサイズに合わせてスケールを調整するクラス
 /// </summary>
-[AddComponentMenu("MushaSystem/UI/CanvasContentScaler")]
+[AddComponentMenu("Musha/UI/CanvasContentScaler")]
 [RequireComponent(typeof(CanvasScaler))]
 public class CanvasContentScaler : UIBehaviour
 {
@@ -98,4 +98,4 @@ public class CanvasContentScaler : UIBehaviour
 	}
 }
 
-}//namespace MushaSystem
+}//namespace Musha

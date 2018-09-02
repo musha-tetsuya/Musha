@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEditor;
 using ParseDictionary = System.Collections.Generic.Dictionary<System.Type, System.Func<string, object>>;
 
-namespace MushaSystem.EditorTool {
+namespace Musha.EditorTool {
 
 /// <summary>
 /// マスターデータメーカー
@@ -79,7 +79,7 @@ public class MasterDataMaker : EditorWindow
 	/// <summary>
 	/// ウィンドウを開く
 	/// </summary>
-	[MenuItem("MushaSystem/MasterDataMaker")]
+	[MenuItem("Musha/MasterDataMaker")]
 	private static void Open()
 	{
 		EditorWindow.GetWindow<MasterDataMaker>();
@@ -298,5 +298,5 @@ public class MasterDataMaker : EditorWindow
 	}
 }
 
-}//namespace MushaSystem.EditorTool
+}//namespace Musha.EditorTool
 #endif

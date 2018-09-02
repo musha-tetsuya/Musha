@@ -8,7 +8,7 @@ using System.Text;
 using UnityEngine;
 using UnityEditor;
 
-namespace MushaSystem.EditorTool {
+namespace Musha.EditorTool {
 
 /// <summary>
 /// AssetBundleビルダー
@@ -48,7 +48,7 @@ public class AssetBundleBuilder : EditorWindow
 	/// <summary>
 	/// GUIウィンドウを開く
 	/// </summary>
-	[MenuItem("MushaSystem/AssetBundleBuilder")]
+	[MenuItem("Musha/AssetBundleBuilder")]
 	private static void Open()
 	{
 		EditorWindow.GetWindow<AssetBundleBuilder>();
@@ -209,5 +209,5 @@ public class AssetBundleBuilder : EditorWindow
 	}
 }
 
-}//namespace MushaSystem.EditorTool
+}//namespace Musha.EditorTool
 #endif
