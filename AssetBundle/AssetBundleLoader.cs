@@ -70,7 +70,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <summary>
 	/// セットアップ
 	/// </summary>
-	public void Setup(Action onFinished)
+	public void Setup(Action<int> onFinished)
 	{
 		if (!this.dontCacheAssetBundle)
 		{
@@ -125,7 +125,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 	/// <summary>
 	/// リソースリストのダウンロード
 	/// </summary>
-	protected IEnumerator DownloadResourceList(Action onFinished = null)
+	protected IEnumerator DownloadResourceList(Action<int> onFinished = null)
 	{
 		//CSVダウンロード
 		using (var www = new WWW(this.serverResourceListUrl))
@@ -141,7 +141,8 @@ public partial class AssetBundleLoader : MonoBehaviour
 			//エラー
 			else if (!string.IsNullOrEmpty(www.error))
 			{
-				Debug.LogError(www.error);
+				Debug.LogWarning("リソースリストのダウンロードに失敗 : " + www.error);
+				onFinished.SafetyInvoke(-1);
 			}
 			else
 			{
@@ -174,7 +175,7 @@ public partial class AssetBundleLoader : MonoBehaviour
 				}
 
 				//コールバック実行
-				onFinished.SafetyInvoke();
+				onFinished.SafetyInvoke(1);
 			}
 		}	
 	}
